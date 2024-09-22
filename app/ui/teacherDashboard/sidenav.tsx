@@ -28,10 +28,8 @@ export default function SideNav() {
             <div className="flex grow flex-row justify-between space-x-2 md:flex-col md:space-x-0 md:space-y-2">
                 <nav className="flex flex-col space-y-2 w-full">
                     {/* Home Link */}
-                    <Link legacyBehavior={true} href="/app/student/dashboard" passHref>
-                        <a className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
-                            <span>Home</span>
-                        </a>
+                    <Link href="/teacher/dashboard" className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
+                        <span>Home</span>
                     </Link>
 
                     {/* School Classes Link with Dropdown */}
@@ -51,31 +49,25 @@ export default function SideNav() {
                         {/* Dropdown Content */}
                         {isClassesDropdownOpen && (
                             <div className="ml-4 mt-2 space-y-2">
-                                <Link legacyBehavior={true} href="app/student/dashboard/schoolClasses/viewClasses" passHref>
-                                    <a className="block rounded-md bg-gray-50 p-2 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
-                                        View Classes
-                                    </a>
+                                <Link href="/teacher/dashboard/schoolClasses/viewClasses" className="block rounded-md bg-gray-50 p-2 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
+                                    View Classes
                                 </Link>
-                                <Link legacyBehavior={true} href="app/student/dashboard/schoolClasses/editClass" passHref>
-                                    <a className="block rounded-md bg-gray-50 p-2 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
-                                        Edit a Class
-                                    </a>
+                                <Link href="/teacher/dashboard/schoolClasses/editClass" className="block rounded-md bg-gray-50 p-2 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
+                                    Edit a Class
                                 </Link>
                             </div>
                         )}
                     </div>
 
                     {/* Profile Link */}
-                    <Link legacyBehavior={true} href="app/student/dashboard/profile" passHref>
-                        <a className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
-                            <span>Profile</span>
-                        </a>
+                    <Link href="/teacher/dashboard/profile" className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
+                        <span>Profile</span>
                     </Link>
                 </nav>
 
                 {/* Sign Out Button */}
                 <form>
-                    <button className="flex h-[48px] w-full grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3">
+                    <button type="button" className="flex h-[48px] w-full grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3">
                         <PowerIcon className="w-6" />
                         <div className="hidden md:block">Sign Out</div>
                     </button>

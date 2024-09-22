@@ -28,14 +28,14 @@ export default function SideNav() {
             <div className="flex grow flex-row justify-between space-x-2 md:flex-col md:space-x-0 md:space-y-2">
                 <nav className="flex flex-col space-y-2 w-full">
                     {/* Home Link */}
-                    <Link href="/app/student/dashboard">
+                    <Link href="/student/dashboard">
                         <div className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 cursor-pointer">
                             <span>Home</span>
                         </div>
                     </Link>
 
                     {/* Attendance Link */}
-                    <Link href="/app/student/dashboard/attendance">
+                    <Link href="/student/dashboard/attendance">
                         <div className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 cursor-pointer">
                             <span>Attendance</span>
                         </div>
@@ -58,12 +58,12 @@ export default function SideNav() {
                         {/* Dropdown Content */}
                         {isClassesDropdownOpen && (
                             <div className="ml-4 mt-2 space-y-2">
-                                <Link href="/app/student/dashboard/schoolClasses/viewClasses">
+                                <Link href="/student/dashboard/schoolClasses/viewClasses">
                                     <div className="block rounded-md bg-gray-50 p-2 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 cursor-pointer">
                                         View Classes
                                     </div>
                                 </Link>
-                                <Link href="/app/student/dashboard/schoolClasses/editClass">
+                                <Link href="/student/dashboard/schoolClasses/editClass">
                                     <div className="block rounded-md bg-gray-50 p-2 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 cursor-pointer">
                                         Edit a Class
                                     </div>
@@ -73,7 +73,7 @@ export default function SideNav() {
                     </div>
 
                     {/* Profile Link */}
-                    <Link href="/app/student/dashboard/profile">
+                    <Link href="/student/dashboard/profile">
                         <div className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 cursor-pointer">
                             <span>Profile</span>
                         </div>

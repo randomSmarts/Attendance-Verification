@@ -92,7 +92,6 @@ export const getUserInfoByEmail = async (email: string) => {
     const client = await db.connect();
 
     try {
-        // Correct the query to match your column names exactly as they are in the schema
         const userResult = await client.query(
             `SELECT id, name, email, classes, "locationlatitude", "locationlongitude", present, role
              FROM users
@@ -101,15 +100,12 @@ export const getUserInfoByEmail = async (email: string) => {
         );
         const user = userResult.rows[0];
 
-        // Check if the user exists
         if (!user) {
             throw new Error('User not found');
         }
 
-        // Parse classes stored as JSON string
         const userClasses = JSON.parse(user.classes);
 
-        // Fetch class details using the class IDs from the userClasses array
         const classesResult = await client.query(
             `SELECT id, name, timings
              FROM classes
@@ -118,13 +114,13 @@ export const getUserInfoByEmail = async (email: string) => {
         );
         const classes = classesResult.rows;
 
-        // Return the combined user information and their classes
+        // Keep 'name' as is
         return {
             id: user.id,
-            fullName: user.name, // Mapping 'name' to 'fullName' for consistency in UI
+            name: user.name, // Retain name as 'name'
             email: user.email,
-            locationLatitude: user.locationlatitude, // Use lowercase as in the schema
-            locationLongitude: user.locationlongitude, // Use lowercase as in the schema
+            locationLatitude: user.locationlatitude,
+            locationLongitude: user.locationlongitude,
             present: user.present,
             role: user.role,
             classes: classes
@@ -136,6 +132,7 @@ export const getUserInfoByEmail = async (email: string) => {
         client.release();
     }
 };
+
 
 export const fetchUserClassesByEmail = async (email) => {
     const client = await db.connect();
@@ -193,40 +190,27 @@ export const fetchUserClassesByEmail = async (email) => {
     }
 };
 
-// Function to check if the email is associated with a teacher
-export const isTeacherByEmail = async (email) => {
+export const fetchClassesForUserByEmail = async (email) => {
     const client = await db.connect();
     try {
-        const userResult = await client.query(
-            `SELECT role FROM users WHERE email = $1`, [email]
-        );
-        const user = userResult.rows[0];
-        return user ? user.role === 'teacher' : false;
-    } catch (error) {
-        console.error('Error checking if user is a teacher:', error);
-        throw new Error('Failed to verify user role');
-    } finally {
-        client.release();
-    }
-};
-
-// Function to fetch classes by email
-// Function to fetch classes for a teacher by email
-export const fetchClassesForTeacherByEmail = async (email) => {
-    const client = await db.connect();
-    try {
+        // Fetch user details based on the provided email
         const userResult = await client.query(
             `SELECT id, classes FROM users WHERE email = $1`, [email]
         );
         const user = userResult.rows[0];
 
-        if (!user) throw new Error('User not found');
-
-        const userClasses = JSON.parse(user.classes);
-        if (!Array.isArray(userClasses) || userClasses.length === 0) {
-            throw new Error('No classes found for the user');
+        // Check if the user exists
+        if (!user) {
+            throw new Error('User not found');
         }
 
+        // Parse classes stored as JSON
+        const userClasses = JSON.parse(user.classes);
+        if (!Array.isArray(userClasses) || userClasses.length === 0) {
+            throw new Error('No classes found for this user');
+        }
+
+        // Fetch class details using the class IDs from the userClasses array
         const classesResult = await client.query(
             `SELECT id, name, timings FROM classes WHERE id = ANY($1::uuid[])`, [userClasses]
         );
@@ -239,13 +223,43 @@ export const fetchClassesForTeacherByEmail = async (email) => {
     }
 };
 
-// Function to get students by class ID
-export const getStudentsByClassId = async (classId) => {
+// Function to check if the user is a teacher based on their email
+export const isUserTeacherByEmail = async (email) => {
     const client = await db.connect();
     try {
-        const studentsResult = await client.query(
-            `SELECT id, name, present FROM students WHERE classId = $1`, [classId]
+        const userResult = await client.query(
+            `SELECT role FROM users WHERE email = $1`, [email]
         );
+        const user = userResult.rows[0];
+
+        return user ? user.role === 'teacher' : false;
+    } catch (error) {
+        console.error('Error checking user role:', error);
+        throw new Error('Failed to check user role');
+    } finally {
+        client.release();
+    }
+};
+
+// Function to fetch students by class ID
+export const fetchStudentsByClassId = async (classId) => {
+    const client = await db.connect();
+    try {
+        const classResult = await client.query(
+            `SELECT students FROM classes WHERE id = $1`, [classId]
+        );
+        const classData = classResult.rows[0];
+
+        if (!classData) {
+            throw new Error('Class not found');
+        }
+
+        // Parse student IDs from the class data
+        const studentIds = JSON.parse(classData.students);
+        const studentsResult = await client.query(
+            `SELECT id, name, email, present FROM users WHERE id = ANY($1::uuid[])`, [studentIds]
+        );
+
         return studentsResult.rows;
     } catch (error) {
         console.error('Error fetching students by class ID:', error);

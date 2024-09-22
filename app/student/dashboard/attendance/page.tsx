@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import AttendanceButton from 'app/ui/attendance/button';
 import { getUserClassesByEmail } from 'app/lib/actions'; // Updated function to fetch classes by email
 
@@ -12,9 +12,9 @@ const Page = () => {
     const handleEmailSubmit = async (e) => {
         e.preventDefault();
         try {
-            const userClasses = await getUserClassesByEmail(email);
-            setClasses(userClasses);
-            if (userClasses.length === 0) {
+            const fetchedClasses = await getUserClassesByEmail(email); // Directly get the classes array
+            setClasses(fetchedClasses); // Set the classes state with the fetched classes
+            if (fetchedClasses.length === 0) {
                 setMessage('No classes found for this email.');
             } else {
                 setMessage('');
@@ -39,7 +39,9 @@ const Page = () => {
                 <button type="submit">Get Classes</button>
             </form>
             {message && <p>{message}</p>}
-            {classes.length > 0 && <AttendanceButton classes={classes} email={email} />} {/* Pass email to button */}
+            {classes.length > 0 && (
+                <AttendanceButton classes={classes} email={email} /> // Pass classes to AttendanceButton
+            )}
         </div>
     );
 };

@@ -17,9 +17,14 @@ export const checkGeolocation = () => {
 
         navigator.geolocation.getCurrentPosition((position) => {
             const { latitude, longitude } = position.coords;
-            const targetLocation = { latitude: 37.766400, longitude: -121.914650 }; // Define your target location
+            const targetLocation = { latitude: 100, longitude: -122.419418 }; // Target location
             const distance = calculateDistance(latitude, longitude, targetLocation.latitude, targetLocation.longitude);
-            resolve(distance <= 20); // Check if within 20 feet
+
+            // Log current position and distance for debugging
+            console.log('User Latitude:', latitude, 'User Longitude:', longitude);
+            console.log('Distance to target (feet):', distance);
+
+            resolve(distance <= 20); // Check if within 20 feet (or increase this threshold)
         }, () => resolve(false));
     });
 };
