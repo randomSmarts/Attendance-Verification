@@ -28,17 +28,17 @@ export default function SideNav() {
             <div className="flex grow flex-row justify-between space-x-2 md:flex-col md:space-x-0 md:space-y-2">
                 <nav className="flex flex-col space-y-2 w-full">
                     {/* Home Link */}
-                    <Link legacyBehavior={true} href="/app/student/dashboard" passHref>
-                        <a className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
+                    <Link href="/app/student/dashboard">
+                        <div className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 cursor-pointer">
                             <span>Home</span>
-                        </a>
+                        </div>
                     </Link>
 
                     {/* Attendance Link */}
-                    <Link legacyBehavior={true} href="/app/student/dashboard/attendance" passHref>
-                        <a className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
+                    <Link href="/app/student/dashboard/attendance">
+                        <div className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 cursor-pointer">
                             <span>Attendance</span>
-                        </a>
+                        </div>
                     </Link>
 
                     {/* School Classes Link with Dropdown */}
@@ -58,25 +58,25 @@ export default function SideNav() {
                         {/* Dropdown Content */}
                         {isClassesDropdownOpen && (
                             <div className="ml-4 mt-2 space-y-2">
-                                <Link legacyBehavior={true} href="app/student/dashboard/schoolClasses/viewClasses" passHref>
-                                    <a className="block rounded-md bg-gray-50 p-2 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
+                                <Link href="/app/student/dashboard/schoolClasses/viewClasses">
+                                    <div className="block rounded-md bg-gray-50 p-2 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 cursor-pointer">
                                         View Classes
-                                    </a>
+                                    </div>
                                 </Link>
-                                <Link legacyBehavior={true} href="app/student/dashboard/schoolClasses/editClass" passHref>
-                                    <a className="block rounded-md bg-gray-50 p-2 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
+                                <Link href="/app/student/dashboard/schoolClasses/editClass">
+                                    <div className="block rounded-md bg-gray-50 p-2 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 cursor-pointer">
                                         Edit a Class
-                                    </a>
+                                    </div>
                                 </Link>
                             </div>
                         )}
                     </div>
 
                     {/* Profile Link */}
-                    <Link legacyBehavior={true} href="app/student/dashboard/profile" passHref>
-                        <a className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
+                    <Link href="/app/student/dashboard/profile">
+                        <div className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 cursor-pointer">
                             <span>Profile</span>
-                        </a>
+                        </div>
                     </Link>
                 </nav>
 
