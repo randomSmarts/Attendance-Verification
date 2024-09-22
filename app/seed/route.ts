@@ -1,120 +1,97 @@
-
 import bcrypt from 'bcrypt';
 import { db } from '@vercel/postgres';
-import { invoices, customers, revenue, users } from '../lib/placeholder-data';
+import { classes, users, classEnrollments } from '../lib/placeholder-data'; /* Ensure this path is correct*/
 
 const client = await db.connect();
 
 async function seedUsers() {
-  await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
-  await client.sql`
+    await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
+    await client.sql`
      CREATE TABLE IF NOT EXISTS users (
-       id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+       id UUID PRIMARY KEY,  /* Unique user ID from the auth service*/
        name VARCHAR(255) NOT NULL,
        email TEXT NOT NULL UNIQUE,
-       password TEXT NOT NULL
+       role VARCHAR(50) NOT NULL  /* User role (teacher or student)*/
      );
    `;
 
-  const insertedUsers = await Promise.all(
-      users.map(async (user) => {
-        const hashedPassword = await bcrypt.hash(user.password, 10);
-        return client.sql`
-         INSERT INTO users (id, name, email, password)
-         VALUES (${user.id}, ${user.name}, ${user.email}, ${hashedPassword})
-         ON CONFLICT (id) DO NOTHING;
-       `;
-      }),
-  );
+    /* Insert users into the database*/
+    const insertedUsers = await Promise.all(
+        users.map(async (user) => {
+            return client.sql`
+        INSERT INTO users (id, name, email, role)
+        VALUES (${user.id}, ${user.fullName}, ${user.email}, ${user.role})
+        ON CONFLICT (id) DO NOTHING;  /* Prevent inserting duplicate users*/
+      `;
+        }),
+    );
 
-  return insertedUsers;
+    return insertedUsers;
 }
 
-async function seedInvoices() {
-  await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
-
-  await client.sql`
-     CREATE TABLE IF NOT EXISTS invoices (
-       id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-       customer_id UUID NOT NULL,
-       amount INT NOT NULL,
-       status VARCHAR(255) NOT NULL,
-       date DATE NOT NULL
-     );
-   `;
-
-  const insertedInvoices = await Promise.all(
-      invoices.map(
-          (invoice) => client.sql`
-         INSERT INTO invoices (customer_id, amount, status, date)
-         VALUES (${invoice.customer_id}, ${invoice.amount}, ${invoice.status}, ${invoice.date})
-         ON CONFLICT (id) DO NOTHING;
-       `,
-      ),
-  );
-
-  return insertedInvoices;
-}
-
-async function seedCustomers() {
-  await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
-
-  await client.sql`
-     CREATE TABLE IF NOT EXISTS customers (
-       id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+async function seedClasses() {
+    await client.sql`
+     CREATE TABLE IF NOT EXISTS classes (
+       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
        name VARCHAR(255) NOT NULL,
-       email VARCHAR(255) NOT NULL,
-       image_url VARCHAR(255) NOT NULL
+       entryCode VARCHAR(255) NOT NULL,
+       teacherID UUID NOT NULL,  /* Foreign key to users table*/
+       attendance BOOLEAN NOT NULL,
+       inClassVerifiedProfile BOOLEAN NOT NULL,
+       timings JSONB NOT NULL  /* Store multiple timings as JSON*/
      );
    `;
 
-  const insertedCustomers = await Promise.all(
-      customers.map(
-          (customer) => client.sql`
-         INSERT INTO customers (id, name, email, image_url)
-         VALUES (${customer.id}, ${customer.name}, ${customer.email}, ${customer.image_url})
-         ON CONFLICT (id) DO NOTHING;
-       `,
-      ),
-  );
+    /* Insert classes into the database*/
+    const insertedClasses = await Promise.all(
+        classes.map(async (classData) => {
+            return client.sql`
+        INSERT INTO classes (id, name, entryCode, teacherID, attendance, inClassVerifiedProfile, timings)
+        VALUES (${classData.id}, ${classData.name}, ${classData.entryCode}, ${classData.teacherID}, ${classData.attendance}, ${classData.inClassVerifiedProfile}, ${JSON.stringify(classData.timings)})
+        ON CONFLICT (id) DO NOTHING;  /* Prevent inserting duplicate classes */
+      `;
+        }),
+    );
 
-  return insertedCustomers;
+    return insertedClasses;
 }
 
-async function seedRevenue() {
-  await client.sql`
-     CREATE TABLE IF NOT EXISTS revenue (
-       month VARCHAR(4) NOT NULL UNIQUE,
-       revenue INT NOT NULL
+async function seedClassEnrollments() {
+    await client.sql`
+     CREATE TABLE IF NOT EXISTS class_enrollments (
+       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+       user_id UUID NOT NULL,  /* Foreign key to users table*/
+       class_id UUID NOT NULL,  /* Foreign key to classes table*/
+       timing JSONB NOT NULL  /* Store the timing associated with this enrollment*/
      );
    `;
 
-  const insertedRevenue = await Promise.all(
-      revenue.map(
-          (rev) => client.sql`
-         INSERT INTO revenue (month, revenue)
-         VALUES (${rev.month}, ${rev.revenue})
-         ON CONFLICT (month) DO NOTHING;
-       `,
-      ),
-  );
+    /* Insert class enrollments into the database*/
+    const insertedEnrollments = await Promise.all(
+        classEnrollments.map(async (enrollment) => {
+            return client.sql`
+        INSERT INTO class_enrollments (user_id, class_id, timing)
+        VALUES (${enrollment.user_id}, ${enrollment.class_id}, ${JSON.stringify(enrollment.timing)})
+        ON CONFLICT (id) DO NOTHING;  /* Prevent inserting duplicate enrollments*/
+      `;
+        }),
+    );
 
-  return insertedRevenue;
+    return insertedEnrollments;
 }
 
 export async function GET() {
-  try {
-    await client.sql`BEGIN`;
-    await seedUsers();
-    await seedCustomers();
-    await seedInvoices();
-    await seedRevenue();
-    await client.sql`COMMIT`;
+    try {
+        await client.sql`BEGIN`;  /* Start transaction*/
+        await seedUsers();
+        await seedClasses();
+        await seedClassEnrollments();
+        await client.sql`COMMIT`;  /* Commit transaction*/
 
-    return Response.json({ message: 'Database seeded successfully' });
-  } catch (error) {
-    await client.sql`ROLLBACK`;
-    return Response.json({ error }, { status: 500 });
-  }
+        return Response.json({ message: 'Database seeded successfully' });
+    } catch (error) {
+        await client.sql`ROLLBACK`;  /* Rollback transaction on error*/
+        console.error(error);  /* Log error details*/
+        return Response.json({ error: 'Failed to seed database' }, { status: 500 });
+    }
 }
-
