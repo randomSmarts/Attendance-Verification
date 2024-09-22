@@ -27,6 +27,12 @@ export default function SideNav() {
             {/* Navigation Links */}
             <div className="flex grow flex-row justify-between space-x-2 md:flex-col md:space-x-0 md:space-y-2">
                 <nav className="flex flex-col space-y-2 w-full">
+                    {/* Home Link */}
+                    <Link legacyBehavior={true} href="/app/student/dashboard" passHref>
+                        <a className="flex items-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
+                            <span>Home</span>
+                        </a>
+                    </Link>
 
                     {/* School Classes Link with Dropdown */}
                     <div className="flex flex-col">
