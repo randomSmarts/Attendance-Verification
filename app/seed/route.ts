@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { db } from '@vercel/postgres';
-import { classes, users, classEnrollments } from '../lib/placeholder-data'; /* Ensure this path is correct*/
+import { classes, users } from '../lib/placeholder-data'; /* Ensure this path is correct */
 
 const client = await db.connect();
 
@@ -8,20 +8,20 @@ async function seedUsers() {
     await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
     await client.sql`
      CREATE TABLE IF NOT EXISTS users (
-       id UUID PRIMARY KEY,  /* Unique user ID from the auth service*/
+       id UUID PRIMARY KEY,  /* Unique user ID from the auth service */
        name VARCHAR(255) NOT NULL,
        email TEXT NOT NULL UNIQUE,
-       role VARCHAR(50) NOT NULL  /* User role (teacher or student)*/
+       role VARCHAR(50) NOT NULL  /* User role (teacher or student) */
      );
    `;
 
-    /* Insert users into the database*/
+    /* Insert users into the database */
     const insertedUsers = await Promise.all(
         users.map(async (user) => {
             return client.sql`
         INSERT INTO users (id, name, email, role)
         VALUES (${user.id}, ${user.fullName}, ${user.email}, ${user.role})
-        ON CONFLICT (id) DO NOTHING;  /* Prevent inserting duplicate users*/
+        ON CONFLICT (id) DO NOTHING;  /* Prevent inserting duplicate users */
       `;
         }),
     );
@@ -35,14 +35,14 @@ async function seedClasses() {
        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
        name VARCHAR(255) NOT NULL,
        entryCode VARCHAR(255) NOT NULL,
-       teacherID UUID NOT NULL,  /* Foreign key to users table*/
+       teacherID UUID NOT NULL,  /* Foreign key to users table */
        attendance BOOLEAN NOT NULL,
        inClassVerifiedProfile BOOLEAN NOT NULL,
-       timings JSONB NOT NULL  /* Store multiple timings as JSON*/
+       timings JSONB NOT NULL  /* Store multiple timings as JSON */
      );
    `;
 
-    /* Insert classes into the database*/
+    /* Insert classes into the database */
     const insertedClasses = await Promise.all(
         classes.map(async (classData) => {
             return client.sql`
@@ -56,42 +56,23 @@ async function seedClasses() {
     return insertedClasses;
 }
 
-async function seedClassEnrollments() {
-    await client.sql`
-     CREATE TABLE IF NOT EXISTS class_enrollments (
-       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-       user_id UUID NOT NULL,  /* Foreign key to users table*/
-       class_id UUID NOT NULL,  /* Foreign key to classes table*/
-       timing JSONB NOT NULL  /* Store the timing associated with this enrollment*/
-     );
-   `;
-
-    /* Insert class enrollments into the database*/
-    const insertedEnrollments = await Promise.all(
-        classEnrollments.map(async (enrollment) => {
-            return client.sql`
-        INSERT INTO class_enrollments (user_id, class_id, timing)
-        VALUES (${enrollment.user_id}, ${enrollment.class_id}, ${JSON.stringify(enrollment.timing)})
-        ON CONFLICT (id) DO NOTHING;  /* Prevent inserting duplicate enrollments*/
-      `;
-        }),
-    );
-
-    return insertedEnrollments;
-}
-
 export async function GET() {
     try {
-        await client.sql`BEGIN`;  /* Start transaction*/
+        await client.sql`BEGIN`;  /* Start transaction */
+
+        // Delete existing data
+        /*await client.sql`DELETE FROM class_enrollments;`;
+        await client.sql`DELETE FROM classes;`;
+        await client.sql`DELETE FROM users;`;
+*/
         await seedUsers();
         await seedClasses();
-        await seedClassEnrollments();
-        await client.sql`COMMIT`;  /* Commit transaction*/
+        await client.sql`COMMIT`;  /* Commit transaction */
 
         return Response.json({ message: 'Database seeded successfully' });
     } catch (error) {
-        await client.sql`ROLLBACK`;  /* Rollback transaction on error*/
-        console.error(error);  /* Log error details*/
+        await client.sql`ROLLBACK`;  /* Rollback transaction on error */
+        console.error(error);  /* Log error details */
         return Response.json({ error: 'Failed to seed database' }, { status: 500 });
     }
 }
