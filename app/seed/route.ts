@@ -11,7 +11,10 @@ async function seedUsers() {
        id UUID PRIMARY KEY,  /* Unique user ID from the auth service */
        name VARCHAR(255) NOT NULL,
        email TEXT NOT NULL UNIQUE,
-       role VARCHAR(50) NOT NULL  /* User role (teacher or student) */
+       role VARCHAR(50) NOT NULL,  /* User role (teacher or student) */
+       classes JSONB NOT NULL,  /* List of class IDs the user is associated with */
+       locationLatitude VARCHAR(20) NOT NULL,  /* Latitude of the user's location */
+       locationLongitude VARCHAR(20) NOT NULL  /* Longitude of the user's location */
      );
    `;
 
@@ -19,8 +22,8 @@ async function seedUsers() {
     const insertedUsers = await Promise.all(
         users.map(async (user) => {
             return client.sql`
-        INSERT INTO users (id, name, email, role)
-        VALUES (${user.id}, ${user.fullName}, ${user.email}, ${user.role})
+        INSERT INTO users (id, name, email, role, classes, locationLatitude, locationLongitude)
+        VALUES (${user.id}, ${user.fullName}, ${user.email}, ${user.role}, ${JSON.stringify(user.classes)}, ${user.locationLatitude}, ${user.locationLongitude})
         ON CONFLICT (id) DO NOTHING;  /* Prevent inserting duplicate users */
       `;
         }),
@@ -38,7 +41,8 @@ async function seedClasses() {
        teacherID UUID NOT NULL,  /* Foreign key to users table */
        attendance BOOLEAN NOT NULL,
        inClassVerifiedProfile BOOLEAN NOT NULL,
-       timings JSONB NOT NULL  /* Store multiple timings as JSON */
+       timings JSONB NOT NULL,  /* Store multiple timings as JSON */
+       students JSONB NOT NULL  /* Store list of student IDs enrolled in the class */
      );
    `;
 
@@ -46,8 +50,8 @@ async function seedClasses() {
     const insertedClasses = await Promise.all(
         classes.map(async (classData) => {
             return client.sql`
-        INSERT INTO classes (id, name, entryCode, teacherID, attendance, inClassVerifiedProfile, timings)
-        VALUES (${classData.id}, ${classData.name}, ${classData.entryCode}, ${classData.teacherID}, ${classData.attendance}, ${classData.inClassVerifiedProfile}, ${JSON.stringify(classData.timings)})
+        INSERT INTO classes (id, name, entryCode, teacherID, attendance, inClassVerifiedProfile, timings, students)
+        VALUES (${classData.id}, ${classData.name}, ${classData.entryCode}, ${classData.teacherID}, ${classData.attendance}, ${classData.inClassVerifiedProfile}, ${JSON.stringify(classData.timings)}, ${JSON.stringify(classData.students)})
         ON CONFLICT (id) DO NOTHING;  /* Prevent inserting duplicate classes */
       `;
         }),
@@ -60,11 +64,8 @@ export async function GET() {
     try {
         await client.sql`BEGIN`;  /* Start transaction */
 
-        // Delete existing data
-        /*await client.sql`DELETE FROM class_enrollments;`;
-        await client.sql`DELETE FROM classes;`;
-        await client.sql`DELETE FROM users;`;
-*/
+
+
         await seedUsers();
         await seedClasses();
         await client.sql`COMMIT`;  /* Commit transaction */
