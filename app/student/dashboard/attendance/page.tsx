@@ -2,29 +2,44 @@
 
 import React, { useEffect, useState } from 'react';
 import AttendanceButton from 'app/ui/attendance/button';
-import { getUserClasses } from 'app/lib/actions';
+import { getUserClassesByEmail } from 'app/lib/actions'; // Updated function to fetch classes by email
 
-const Page = ({ userId }) => {
+const Page = () => {
+    const [email, setEmail] = useState('');
     const [classes, setClasses] = useState([]);
+    const [message, setMessage] = useState('');
 
-    useEffect(() => {
-        const fetchClasses = async () => {
-            console.log(`Using user ID: ${userId}`); // Logging user ID
-            try {
-                const userClasses = await getUserClasses(userId); // Fetch classes using the user ID
-                setClasses(userClasses);
-            } catch (error) {
-                console.error('Error fetching classes:', error.message || error);
+    const handleEmailSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const userClasses = await getUserClassesByEmail(email);
+            setClasses(userClasses);
+            if (userClasses.length === 0) {
+                setMessage('No classes found for this email.');
+            } else {
+                setMessage('');
             }
-        };
-
-        fetchClasses();
-    }, [userId]); // userId is used as a dependency
+        } catch (error) {
+            console.error('Error fetching classes:', error);
+            setMessage('Failed to fetch classes.');
+        }
+    };
 
     return (
         <div>
             <h1>Attendance</h1>
-            <AttendanceButton classes={classes} userId={userId} /> {/* Pass userId to AttendanceButton */}
+            <form onSubmit={handleEmailSubmit}>
+                <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    required
+                />
+                <button type="submit">Get Classes</button>
+            </form>
+            {message && <p>{message}</p>}
+            {classes.length > 0 && <AttendanceButton classes={classes} email={email} />} {/* Pass email to button */}
         </div>
     );
 };
