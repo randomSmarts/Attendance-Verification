@@ -7,8 +7,6 @@ const classes = [
     name: 'Mathematics',
     entryCode: 'hg6rf1',
     teacherID: '410544b2-4001-4271-9855-fec4b6a6442a',
-    attendance: true,
-    inClassVerifiedProfile: true,
     timings: JSON.stringify([
       {
         day: 'Monday',
@@ -29,8 +27,6 @@ const classes = [
     name: 'Science',
     entryCode: 'abc123',
     teacherID: '410544b2-4001-4271-9855-fec4b6a6442a',
-    attendance: true,
-    inClassVerifiedProfile: true,
     timings: JSON.stringify([
       {
         day: 'Tuesday',
@@ -51,8 +47,6 @@ const classes = [
     name: 'History',
     entryCode: 'def456',
     teacherID: '5a1b544b-4001-4271-9855-fec4b6a6443b', // Different teacher ID
-    attendance: true,
-    inClassVerifiedProfile: true,
     timings: JSON.stringify([
       {
         day: 'Friday',
@@ -74,6 +68,7 @@ const users = [
     classes: JSON.stringify([classes[0].id, classes[1].id]), // Aarsh teaches Mathematics and Science
     locationLatitude: '28.7041',
     locationLongitude: '77.1025',
+    present: true,
     role: 'teacher',
   },
   {
@@ -83,6 +78,7 @@ const users = [
     classes: JSON.stringify([classes[0].id, classes[1].id]), // John is enrolled in Mathematics and Science
     locationLatitude: '40.7128',
     locationLongitude: '-74.0060',
+    present: true,
     role: 'student',
   },
   {
@@ -92,6 +88,7 @@ const users = [
     classes: JSON.stringify([classes[0].id, classes[2].id]), // Jane is enrolled in Mathematics and History
     locationLatitude: '34.0522',
     locationLongitude: '-118.2437',
+    present: true,
     role: 'student',
   },
   {
@@ -101,8 +98,10 @@ const users = [
     classes: JSON.stringify([classes[1].id, classes[2].id]), // Mark is enrolled in Science and History
     locationLatitude: '51.5074',
     locationLongitude: '-0.1278',
+    present: true,
     role: 'student',
   }
 ];
 
 export { classes, users };
+
