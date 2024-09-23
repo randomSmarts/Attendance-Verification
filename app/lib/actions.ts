@@ -4,7 +4,23 @@ import { AuthError } from 'next-auth';
 import { db } from '@vercel/postgres';
 import { v4 as uuidv4 } from 'uuid';
 
-export const getUserClassesByEmail = async (email) => {
+// Define user and class types
+interface User {
+    id: string;
+    email: string;
+    classes: string[];
+    present: boolean;
+    role: string;
+}
+
+interface Class {
+    id: string;
+    name: string;
+    timings: any;
+}
+
+// Fetch user classes by email
+export const getUserClassesByEmail = async (email: string): Promise<Class[]> => {
     const client = await db.connect();
     try {
         console.log('Searching for user classes with email:', email);
@@ -13,30 +29,27 @@ export const getUserClassesByEmail = async (email) => {
         const userResult = await client.query(
             `SELECT id, classes, present FROM users WHERE email = $1`, [email]
         );
-        const user = userResult.rows[0];
+        const user = userResult.rows[0] as User;
 
         // Check if the user exists
         if (!user) {
             throw new Error('User not found');
         }
 
-        // Parse user classes, ensuring it's valid JSON
         let userClasses = Array.isArray(user.classes) ? user.classes : [];
 
         console.log('User classes UUIDs:', userClasses);
 
-        // Fetch classes using the class IDs from userClasses
         const classesResult = await client.query(
             `SELECT id, name, timings FROM classes WHERE id = ANY($1::uuid[])`, [userClasses]
         );
-        const classes = classesResult.rows;
+        const classes = classesResult.rows as Class[];
 
-        // Check if any classes were found
         if (classes.length === 0) {
             console.log('No classes found for this user.');
         }
 
-        return classes; // Return classes, will be empty if none found
+        return classes;
     } catch (error) {
         console.error('Error fetching user classes:', error);
         throw new Error('Failed to fetch classes');
@@ -45,8 +58,8 @@ export const getUserClassesByEmail = async (email) => {
     }
 };
 
-// Function to mark attendance
-export const markAttendance = async (classId, email) => {
+// Mark attendance
+export const markAttendance = async (classId: string, email: string): Promise<{ message: string }> => {
     const client = await db.connect();
     try {
         const { rows: userId } = await client.query(
@@ -55,7 +68,6 @@ export const markAttendance = async (classId, email) => {
 
         if (userId.length === 0) throw new Error('User not found');
 
-        // Update the 'present' field to true if the user is attending the class
         await client.query(
             `UPDATE users
              SET present = true
@@ -64,7 +76,6 @@ export const markAttendance = async (classId, email) => {
         );
 
         console.log(`Attendance for class ID: ${classId} has been marked as present for user: ${email}`);
-
         return { message: 'Attendance marked successfully' };
     } catch (error) {
         console.error('Error marking attendance:', error);
@@ -74,8 +85,8 @@ export const markAttendance = async (classId, email) => {
     }
 };
 
-// Function to get user info based on their email
-export const getUserInfoByEmail = async (email) => {
+// Fetch user info by email
+export const getUserInfoByEmail = async (email: string): Promise<User> => {
     const client = await db.connect();
 
     try {
@@ -85,34 +96,25 @@ export const getUserInfoByEmail = async (email) => {
             [email]
         );
 
-        const user = userResult.rows[0];
+        const user = userResult.rows[0] as User;
 
         if (!user) {
             throw new Error('User not found');
         }
 
-        let userClasses = Array.isArray(user.classes) ? user.classes : []; // Ensure classes is an array
+        const userClasses = Array.isArray(user.classes) ? user.classes : [];
 
-        // Fetch existing classes to filter out invalid class IDs
         const classesResult = await client.query(
             `SELECT id FROM classes WHERE id = ANY($1::uuid[])`, [userClasses]
         );
 
-        const existingClassIds = new Set(classesResult.rows.map(row => row.id));
+        const existingClassIds = new Set(classesResult.rows.map((row: any) => row.id));
 
-        // Filter out invalid class IDs from userClasses
-        const validUserClasses = userClasses.filter(classId => existingClassIds.has(classId));
+        const validUserClasses = userClasses.filter((classId: string) => existingClassIds.has(classId));
 
-        // Return user information along with valid classes
         return {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            locationLatitude: user.locationlatitude,
-            locationLongitude: user.locationlongitude,
-            present: user.present,
-            role: user.role,
-            classes: validUserClasses // Return only valid class IDs
+            ...user,
+            classes: validUserClasses
         };
     } catch (error) {
         console.error('Error fetching user info:', error);
@@ -122,48 +124,31 @@ export const getUserInfoByEmail = async (email) => {
     }
 };
 
-// Function to fetch classes by email
-export const fetchClassesForUserByEmail = async (email) => {
+// Fetch classes for user by email
+export const fetchClassesForUserByEmail = async (email: string): Promise<Class[]> => {
     const client = await db.connect();
     try {
-        // Fetch user details based on the provided email
         const userResult = await client.query(
             `SELECT id, classes FROM users WHERE email = $1`, [email]
         );
-        const user = userResult.rows[0];
+        const user = userResult.rows[0] as User;
 
-        // Check if the user exists
         if (!user) {
             throw new Error('User not found');
         }
 
-        // Debug log the user classes before parsing
-        console.log('User classes raw data:', user.classes);
-
-        // Ensure userClasses is an array
         const userClasses = Array.isArray(user.classes) ? user.classes : [];
 
-        // Check if userClasses is empty
         if (userClasses.length === 0) {
             console.log('No classes found for this user.');
-            return []; // Return an empty array instead of throwing an error
+            return [];
         }
 
-        // Debug log the parsed user classes
-        console.log('Parsed user classes:', userClasses);
-
-        // Fetch class details using the class IDs from the userClasses array
         const classesResult = await client.query(
             `SELECT id, name, timings FROM classes WHERE id = ANY($1::uuid[])`, [userClasses]
         );
 
-        // Check if any classes were found
-        if (classesResult.rows.length === 0) {
-            console.log('No classes found in the database for these IDs:', userClasses);
-            return []; // Return an empty array if no classes were found
-        }
-
-        return classesResult.rows;
+        return classesResult.rows as Class[];
     } catch (error) {
         console.error('Error fetching user classes:', error);
         throw new Error('Failed to fetch classes');
@@ -172,15 +157,14 @@ export const fetchClassesForUserByEmail = async (email) => {
     }
 };
 
-
-// Function to check if the user is a teacher based on their email
-export const isUserTeacherByEmail = async (email) => {
+// Check if user is a teacher by email
+export const isUserTeacherByEmail = async (email: string): Promise<boolean> => {
     const client = await db.connect();
     try {
         const userResult = await client.query(
             `SELECT role FROM users WHERE email = $1`, [email]
         );
-        const user = userResult.rows[0];
+        const user = userResult.rows[0] as User;
 
         return user ? user.role === 'teacher' : false;
     } catch (error) {
@@ -191,8 +175,8 @@ export const isUserTeacherByEmail = async (email) => {
     }
 };
 
-// Function to fetch students by class ID
-export const fetchStudentsByClassId = async (classId) => {
+// Fetch students by class ID
+export const fetchStudentsByClassId = async (classId: string): Promise<User[]> => {
     const client = await db.connect();
     try {
         const classResult = await client.query(
@@ -204,13 +188,13 @@ export const fetchStudentsByClassId = async (classId) => {
             throw new Error('Class not found');
         }
 
-        // Parse student IDs from the class data
-        const studentIds = Array.isArray(classData.students) ? classData.students : []; // Check if students exist
+        const studentIds = Array.isArray(classData.students) ? classData.students : [];
+
         const studentsResult = await client.query(
             `SELECT id, fullName AS name, email, present FROM users WHERE id = ANY($1::uuid[])`, [studentIds]
         );
 
-        return studentsResult.rows;
+        return studentsResult.rows as User[];
     } catch (error) {
         console.error('Error fetching students by class ID:', error);
         throw new Error('Failed to fetch students');
@@ -220,12 +204,12 @@ export const fetchStudentsByClassId = async (classId) => {
 };
 
 // Add a class
-export const addClass = async (teacherId, name, entryCode, timings, students) => {
+export const addClass = async (teacherId: string, name: string, entryCode: string, timings: any, students: string[]): Promise<{ success: boolean, classId: string }> => {
     const client = await db.connect();
-    const classId = uuidv4(); // Generate a random UUID
+    const classId = uuidv4();
 
     try {
-        const result = await client.query(
+        await client.query(
             `INSERT INTO classes (id, name, entrycode, teacherid, timings, students)
              VALUES ($1, $2, $3, $4, $5, $6)`,
             [classId, name, entryCode, teacherId, JSON.stringify(timings), JSON.stringify(students)]
@@ -241,7 +225,7 @@ export const addClass = async (teacherId, name, entryCode, timings, students) =>
 };
 
 // Get teacher ID by email
-export const getTeacherIdByEmail = async (email) => {
+export const getTeacherIdByEmail = async (email: string): Promise<string> => {
     const client = await db.connect();
 
     try {
@@ -253,7 +237,7 @@ export const getTeacherIdByEmail = async (email) => {
             throw new Error('Teacher not found');
         }
 
-        return result.rows[0].id; // Return the teacher's ID
+        return result.rows[0].id;
     } catch (error) {
         console.error('Error fetching teacher ID:', error);
         throw new Error('Failed to fetch teacher ID');
