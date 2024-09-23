@@ -6,11 +6,11 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 export default function Page() {
-    const [showPopup, setShowPopup] = useState(null); // Track which popup to show
+    const [showPopup, setShowPopup] = useState<string | null>(null); // Track which popup to show
     const [accountType, setAccountType] = useState('student'); // Track account type
     const [message, setMessage] = useState(''); // Message state for account creation
 
-    const handleOpenPopup = (action) => {
+    const handleOpenPopup = (action: 'create' | 'login') => {
         setShowPopup(action);
         setMessage(''); // Clear message when opening popup
     };
@@ -20,7 +20,7 @@ export default function Page() {
         setAccountType('student'); // Reset account type
     };
 
-    const handleCreateAccount = (e) => {
+    const handleCreateAccount = (e: React.FormEvent) => {
         e.preventDefault();
         // Here you would normally handle account creation (e.g., API call)
 
