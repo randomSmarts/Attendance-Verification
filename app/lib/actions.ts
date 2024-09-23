@@ -21,20 +21,7 @@ export const getUserClassesByEmail = async (email) => {
         }
 
         // Parse user classes, ensuring it's valid JSON
-        let userClasses = [];
-        if (user.classes) {
-            try {
-                userClasses = JSON.parse(user.classes); // Attempt to parse classes
-            } catch (error) {
-                console.error('Error parsing classes JSON:', error.message);
-                userClasses = []; // Reset to empty array on parse error
-            }
-        }
-
-        // Ensure userClasses is an array
-        if (!Array.isArray(userClasses)) {
-            userClasses = [];
-        }
+        let userClasses = Array.isArray(user.classes) ? user.classes : [];
 
         console.log('User classes UUIDs:', userClasses);
 
@@ -49,8 +36,7 @@ export const getUserClassesByEmail = async (email) => {
             console.log('No classes found for this user.');
         }
 
-        // Return only valid classes or an empty array if none are valid
-        return classes;
+        return classes; // Return classes, will be empty if none found
     } catch (error) {
         console.error('Error fetching user classes:', error);
         throw new Error('Failed to fetch classes');
@@ -65,7 +51,7 @@ export const markAttendance = async (classId, email) => {
     try {
         const { rows: userId } = await client.query(
             `SELECT id, classes FROM users WHERE email = $1`, [email]
-        ); // Fetch user ID by email
+        );
 
         if (userId.length === 0) throw new Error('User not found');
 
@@ -105,19 +91,7 @@ export const getUserInfoByEmail = async (email) => {
             throw new Error('User not found');
         }
 
-        let userClasses = [];
-        try {
-            // Attempt to parse the classes JSON
-            userClasses = user.classes ? JSON.parse(user.classes) : []; // Check if classes exist
-        } catch (error) {
-            console.error('Invalid format for user classes:', error.message);
-            userClasses = []; // Fallback to empty array if parsing fails
-        }
-
-        // Ensure userClasses is an array
-        if (!Array.isArray(userClasses)) {
-            userClasses = []; // Fallback to empty array if it's not an array
-        }
+        let userClasses = Array.isArray(user.classes) ? user.classes : []; // Ensure classes is an array
 
         // Fetch existing classes to filter out invalid class IDs
         const classesResult = await client.query(
@@ -166,19 +140,10 @@ export const fetchClassesForUserByEmail = async (email) => {
         // Debug log the user classes before parsing
         console.log('User classes raw data:', user.classes);
 
-        // Parse classes stored as JSON
-        let userClasses = [];
-        if (user.classes) {
-            try {
-                userClasses = JSON.parse(user.classes);
-            } catch (error) {
-                console.error('Error parsing classes JSON:', error.message);
-                throw new Error('Invalid classes format');
-            }
-        }
-
         // Ensure userClasses is an array
-        if (!Array.isArray(userClasses) || userClasses.length === 0) {
+        let userClasses = Array.isArray(user.classes) ? user.classes : []; // Check if classes exist
+
+        if (userClasses.length === 0) {
             throw new Error('No classes found for this user');
         }
 
@@ -203,7 +168,6 @@ export const fetchClassesForUserByEmail = async (email) => {
         client.release();
     }
 };
-
 
 // Function to check if the user is a teacher based on their email
 export const isUserTeacherByEmail = async (email) => {
@@ -237,7 +201,7 @@ export const fetchStudentsByClassId = async (classId) => {
         }
 
         // Parse student IDs from the class data
-        const studentIds = classData.students ? JSON.parse(classData.students) : []; // Check if students exist
+        const studentIds = Array.isArray(classData.students) ? classData.students : []; // Check if students exist
         const studentsResult = await client.query(
             `SELECT id, fullName AS name, email, present FROM users WHERE id = ANY($1::uuid[])`, [studentIds]
         );
@@ -252,7 +216,7 @@ export const fetchStudentsByClassId = async (classId) => {
 };
 
 // Add a class
-export const addClass = async (teacherid, name, entrycode, timings, students) => {
+export const addClass = async (teacherId, name, entryCode, timings, students) => {
     const client = await db.connect();
     const classId = uuidv4(); // Generate a random UUID
 
@@ -260,7 +224,7 @@ export const addClass = async (teacherid, name, entrycode, timings, students) =>
         const result = await client.query(
             `INSERT INTO classes (id, name, entrycode, teacherid, timings, students)
              VALUES ($1, $2, $3, $4, $5, $6)`,
-            [classId, name, entrycode, teacherid, JSON.stringify(timings), JSON.stringify(students)]
+            [classId, name, entryCode, teacherId, JSON.stringify(timings), JSON.stringify(students)]
         );
 
         return { success: true, classId };

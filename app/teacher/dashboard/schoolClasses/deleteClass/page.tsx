@@ -1,4 +1,4 @@
-'use client';
+/*'use client';
 
 import React, { useState } from 'react';
 import { getClassesByEmail, deleteClassById } from 'app/lib/actions';
@@ -89,3 +89,4 @@ export default function DeleteClass() {
         </div>
     );
 }
+*/

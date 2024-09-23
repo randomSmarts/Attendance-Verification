@@ -1,4 +1,4 @@
-'use client';
+/*'use client';
 
 import { lusitana } from '@/app/ui/fonts';
 import {
@@ -83,3 +83,4 @@ export default function LoginForm() {
       </form>
   );
 }
+ */
