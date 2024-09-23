@@ -10,6 +10,7 @@ export default function Page() {
     const [showPopup, setShowPopup] = useState<'create' | 'login' | null>(null);
     const [accountType, setAccountType] = useState('student');
     const [message, setMessage] = useState('');
+
     const [loginAccountType, setLoginAccountType] = useState('student');
 
     const handleOpenPopup = (action: 'create' | 'login') => {
