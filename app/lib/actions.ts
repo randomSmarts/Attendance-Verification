@@ -141,10 +141,12 @@ export const fetchClassesForUserByEmail = async (email) => {
         console.log('User classes raw data:', user.classes);
 
         // Ensure userClasses is an array
-        let userClasses = Array.isArray(user.classes) ? user.classes : []; // Check if classes exist
+        const userClasses = Array.isArray(user.classes) ? user.classes : [];
 
+        // Check if userClasses is empty
         if (userClasses.length === 0) {
-            throw new Error('No classes found for this user');
+            console.log('No classes found for this user.');
+            return []; // Return an empty array instead of throwing an error
         }
 
         // Debug log the parsed user classes
@@ -158,6 +160,7 @@ export const fetchClassesForUserByEmail = async (email) => {
         // Check if any classes were found
         if (classesResult.rows.length === 0) {
             console.log('No classes found in the database for these IDs:', userClasses);
+            return []; // Return an empty array if no classes were found
         }
 
         return classesResult.rows;
@@ -168,6 +171,7 @@ export const fetchClassesForUserByEmail = async (email) => {
         client.release();
     }
 };
+
 
 // Function to check if the user is a teacher based on their email
 export const isUserTeacherByEmail = async (email) => {

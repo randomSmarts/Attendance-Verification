@@ -1,3 +1,7 @@
+export default function Page() {
+    return <p>Customers Page</p>;
+}
+
 /*'use client';
 
 import React, { useState } from 'react';

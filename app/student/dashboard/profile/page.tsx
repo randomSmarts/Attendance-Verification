@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { getUserInfoByEmail } from 'app/lib/actions'; // Ensure correct import path
+import { getUserInfoByEmail, fetchClassesForUserByEmail } from 'app/lib/actions'; // Ensure correct import path
 
 export default function ViewUserInfo() {
     const [email, setEmail] = useState('');
     const [userInfo, setUserInfo] = useState(null);
+    const [userClasses, setUserClasses] = useState([]);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -18,6 +19,10 @@ export default function ViewUserInfo() {
             // Fetch the user info by email
             const data = await getUserInfoByEmail(email);
             setUserInfo(data);
+
+            // Fetch the classes for the user
+            const classesData = await fetchClassesForUserByEmail(email);
+            setUserClasses(classesData);
         } catch (err: any) {
             setError(err.message || 'An error occurred');
         } finally {
@@ -56,7 +61,7 @@ export default function ViewUserInfo() {
             {userInfo && (
                 <div className="border p-4 rounded">
                     <h2 className="text-xl font-semibold mb-2">User Info</h2>
-                    <p><strong>Name:</strong> {userInfo.name}</p> {/* Change to 'name' */}
+                    <p><strong>Name:</strong> {userInfo.name}</p>
                     <p><strong>Email:</strong> {userInfo.email}</p>
                     <p><strong>Role:</strong> {userInfo.role}</p>
                     <p><strong>Location:</strong> Latitude: {userInfo.locationLatitude}, Longitude: {userInfo.locationLongitude}</p>
@@ -64,11 +69,15 @@ export default function ViewUserInfo() {
 
                     <h3 className="text-lg font-semibold mt-4">Enrolled Classes:</h3>
                     <ul className="list-disc ml-5">
-                        {userInfo.classes.map((cls: any) => (
-                            <li key={cls.id}>
-                                {cls.name} - {cls.timings}
-                            </li>
-                        ))}
+                        {userClasses.length > 0 ? (
+                            userClasses.map((cls: any) => (
+                                <li key={cls.id}>
+                                    {cls.name} - {cls.timings}
+                                </li>
+                            ))
+                        ) : (
+                            <li>No classes found.</li>
+                        )}
                     </ul>
                 </div>
             )}
