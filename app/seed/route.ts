@@ -1,3 +1,7 @@
+export async function getData() {
+    return "Hello, world!";
+}
+
 /*import bcrypt from 'bcrypt';
 import { db } from '@vercel/postgres';
 import { classes, users } from '../lib/placeholder-data';
