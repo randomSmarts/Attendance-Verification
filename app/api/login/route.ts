@@ -1,10 +1,11 @@
 // app/api/login/route.ts
 import { NextResponse } from 'next/server';
 import { Client } from 'pg';
+import Request from 'express';
 
 export async function POST(request: Request) {
     const client = new Client({
-        connectionString: process.env.POSTGRES_URL // TODO: Add ENV Variable
+        connectionString: process.env.POSTGRES_URL as string,
     });
 
     await client.connect();
