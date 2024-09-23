@@ -65,6 +65,7 @@ const users = [
     id: '410544b2-4001-4271-9855-fec4b6a6442a',
     fullName: 'Aarsh Mittal',
     email: 'aarshsmittal@gmail.com',
+    password: 'password12@123418',
     classes: JSON.stringify([classes[0].id, classes[1].id]), // Aarsh teaches Mathematics and Science
     locationLatitude: '28.7041',
     locationLongitude: '77.1025',
@@ -74,6 +75,7 @@ const users = [
   {
     id: '2a1b544b-4001-1234-5678-abc123def456',
     fullName: 'John Doe',
+    password: 'passwowergerrd12@123418',
     email: 'johndoe@student.com',
     classes: JSON.stringify([classes[0].id, classes[1].id]), // John is enrolled in Mathematics and Science
     locationLatitude: '40.7128',
@@ -84,6 +86,7 @@ const users = [
   {
     id: '3b1b544b-4001-1234-5678-abc123def789',
     fullName: 'Jane Smith',
+    password: 'password3418',
     email: 'janesmith@student.com',
     classes: JSON.stringify([classes[0].id, classes[2].id]), // Jane is enrolled in Mathematics and History
     locationLatitude: '34.0522',
@@ -95,6 +98,7 @@ const users = [
     id: '4c1b544b-4001-1234-5678-abc123def101',
     fullName: 'Mark Johnson',
     email: 'markjohnson@student.com',
+    password: 'password12@123418',
     classes: JSON.stringify([classes[1].id, classes[2].id]), // Mark is enrolled in Science and History
     locationLatitude: '51.5074',
     locationLongitude: '-0.1278',
