@@ -9,7 +9,8 @@ const Page = () => {
     const [classes, setClasses] = useState([]);
     const [message, setMessage] = useState('');
 
-    const handleEmailSubmit = async (e) => {
+    // Specify the event type explicitly: React.FormEvent<HTMLFormElement>
+    const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         try {
             const fetchedClasses = await getUserClassesByEmail(email); // Directly get the classes array

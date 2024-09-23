@@ -1,5 +1,16 @@
-export async function getData() {
-    return "Hello, world!";
+import { NextResponse } from 'next/server';
+
+export async function GET() {
+    // Example data
+    const data = { message: 'Seed route is working!' };
+
+    return NextResponse.json(data);
+}
+
+// If you need POST or other HTTP methods, add them accordingly
+export async function POST(request: Request) {
+    const body = await request.json();
+    return NextResponse.json({ message: 'Data received', body });
 }
 /*import bcrypt from 'bcrypt';
 import { db } from '@vercel/postgres';
