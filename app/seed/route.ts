@@ -1,62 +1,85 @@
 import bcrypt from 'bcrypt';
 import { db } from '@vercel/postgres';
-import { users, classes } from '../lib/placeholder-data';
+import { classes, users } from '../lib/placeholder-data';
 
 const client = await db.connect();
 
 async function seedUsers() {
-    await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
     await client.sql`
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
     CREATE TABLE IF NOT EXISTS users (
       id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-      full_name VARCHAR(255) NOT NULL,
+      fullName VARCHAR(255) NOT NULL,
       email TEXT NOT NULL UNIQUE,
       password TEXT NOT NULL,
-      classes UUID[] DEFAULT '{}'::UUID[],
-      role VARCHAR(50)
+      classes JSONB NOT NULL,
+      locationLatitude VARCHAR(20) NOT NULL,
+      locationLongitude VARCHAR(20) NOT NULL,
+      present BOOLEAN NOT NULL,
+      role VARCHAR(50) NOT NULL
     );
   `;
 
-    await Promise.all(
+    const insertedUsers = await Promise.all(
         users.map(async (user) => {
             const hashedPassword = await bcrypt.hash(user.password, 10);
-            await client.sql`
-        INSERT INTO users (id, full_name, email, password, classes, role)
-        VALUES (${user.id}, ${user.fullName}, ${user.email}, ${hashedPassword}, ${user.classes.map(cls => `'${cls}'`).join(',')}, ${user.role})
+            return client.sql`
+        INSERT INTO users (id, fullName, email, password, classes, locationLatitude, locationLongitude, present, role)
+        VALUES (
+          ${user.id},
+          ${user.fullName},
+          ${user.email},
+          ${hashedPassword},
+          ${JSON.stringify(user.classes)},  -- Make sure to stringify classes
+          ${user.locationLatitude},
+          ${user.locationLongitude},
+          ${user.present},
+          ${user.role}
+        )
         ON CONFLICT (id) DO NOTHING;
       `;
         })
     );
+
+    return insertedUsers;
 }
 
 async function seedClasses() {
-    await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
-
     await client.sql`
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
     CREATE TABLE IF NOT EXISTS classes (
       id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
-      entry_code VARCHAR(255) NOT NULL,
-      teacher_id UUID NOT NULL,
+      entryCode VARCHAR(255) NOT NULL,
+      teacherID UUID NOT NULL,
       timings JSONB NOT NULL,
-      students UUID[] DEFAULT '{}'::UUID[]
+      students JSONB NOT NULL
     );
   `;
 
-    await Promise.all(
+    const insertedClasses = await Promise.all(
         classes.map((cls) => client.sql`
-      INSERT INTO classes (id, name, entry_code, teacher_id, timings, students)
-      VALUES (${cls.id}, ${cls.name}, ${cls.entryCode}, ${cls.teacherID}, ${cls.timings}, ${cls.students.map(student => `'${student}'`).join(',')})
+      INSERT INTO classes (id, name, entryCode, teacherID, timings, students)
+      VALUES (
+        ${cls.id},
+        ${cls.name},
+        ${cls.entryCode},
+        ${cls.teacherID},
+        ${JSON.stringify(cls.timings)},  -- Stringify timings
+        ${JSON.stringify(cls.students)}   -- Stringify students
+      )
       ON CONFLICT (id) DO NOTHING;
     `)
     );
+
+    return insertedClasses;
 }
 
 export async function GET() {
     try {
         await client.sql`BEGIN`;
-        await seedUsers();
         await seedClasses();
+        await seedUsers();
         await client.sql`COMMIT`;
 
         return Response.json({ message: 'Database seeded successfully' });
