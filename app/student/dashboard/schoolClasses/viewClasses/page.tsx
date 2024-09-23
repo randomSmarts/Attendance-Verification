@@ -40,7 +40,7 @@ const UserClassesPage = () => {
                 />
                 <button type="submit" style={styles.button}>Get Classes</button>
             </form>
-            {message && <p>{styles.message}>{message}</p>}
+            {message && <p style={styles.message}>{message}</p>}
             {classes.length > 0 && (
                 <div style={styles.classCardsContainer}>
                     {classes.map((cls) => (
@@ -90,7 +90,7 @@ const styles = {
         borderRadius: '8px',
         padding: '16px',
         boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
-        flex: '1 1 calc(33% - 16px)', // Adjust the width as needed
+        flex: '1 1 calc(33% - 16px)',
     },
     message: {
         color: 'red',

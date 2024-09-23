@@ -52,8 +52,11 @@ export default function SideNav() {
                                 <Link href="/teacher/dashboard/schoolClasses/viewClasses" className="block rounded-md bg-gray-50 p-2 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
                                     View Classes
                                 </Link>
-                                <Link href="/teacher/dashboard/schoolClasses/editClass" className="block rounded-md bg-gray-50 p-2 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
-                                    Edit a Class
+                                <Link href="/teacher/dashboard/schoolClasses/addClass" className="block rounded-md bg-gray-50 p-2 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
+                                    Add a Class
+                                </Link>
+                                <Link href="/teacher/dashboard/schoolClasses/deleteClass" className="block rounded-md bg-gray-50 p-2 text-sm font-medium hover:bg-sky-100 hover:text-blue-600">
+                                    Delete a Class
                                 </Link>
                             </div>
                         )}
