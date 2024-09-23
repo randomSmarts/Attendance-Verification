@@ -2,7 +2,7 @@
 'use client';
 
 import AcmeLogo from '@/app/ui/acme-logo';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function Page() {
@@ -10,6 +10,7 @@ export default function Page() {
     const [showPopup, setShowPopup] = useState<'create' | 'login' | null>(null);
     const [accountType, setAccountType] = useState('student');
     const [message, setMessage] = useState('');
+
     const [loginAccountType, setLoginAccountType] = useState('student');
 
     const handleOpenPopup = (action: 'create' | 'login') => {
@@ -38,23 +39,32 @@ export default function Page() {
         const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value;
         const password = (e.currentTarget.elements.namedItem('password') as HTMLInputElement).value;
 
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email,
-                password,
-                accountType: loginAccountType,
-            }),
-        });
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    accountType: loginAccountType,
+                }),
+            });
 
-        const data = await response.json();
-        if (data.success) {
-            router.push(loginAccountType === 'student' ? '/studentDashboard' : '/teacherDashboard');
-        } else {
-            setMessage(data.message || 'An error occurred. Please try again later.');
+            if (!response.ok) {
+                // pass
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                router.push(loginAccountType === 'student' ? '/studentDashboard' : '/teacherDashboard');
+            } else {
+                setMessage(data.message || 'Login failed. Please check your credentials and try again.');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            setMessage('Login error');
         }
     };
 

@@ -4,7 +4,7 @@ import { Client } from 'pg';
 
 export async function POST(request: Request) {
     const client = new Client({
-        connectionString: process.env.DATABASE_URL,
+        connectionString: process.env.POSTGRES_URL // TODO: Add ENV Variable
     });
 
     await client.connect();
