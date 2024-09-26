@@ -114,23 +114,28 @@ export const getUserClassesByEmail = async (email: string): Promise<Class[]> => 
         );
         const user = userResult.rows[0] as User;
 
-        // Check if the user exists
         if (!user) {
             throw new Error('User not found');
         }
 
-        let userClasses = Array.isArray(user.classes) ? user.classes : [];
+        const userClasses = Array.isArray(user.classes) ? user.classes : [];
 
-        console.log('User classes UUIDs:', userClasses);
+        if (userClasses.length === 0) {
+            console.log('No classes found for this user.');
+            return [];
+        }
 
+        // Fetch class details (timings and name) for each class
         const classesResult = await client.query(
             `SELECT id, name, timings FROM classes WHERE id = ANY($1::uuid[])`, [userClasses]
         );
-        const classes = classesResult.rows as Class[];
 
-        if (classes.length === 0) {
-            console.log('No classes found for this user.');
-        }
+        // Parse timings if stored as JSONB or JSON string
+        const classes = classesResult.rows.map((cls) => ({
+            id: cls.id,
+            name: cls.name,
+            timings: Array.isArray(cls.timings) ? cls.timings : JSON.parse(cls.timings),  // Ensure timings are parsed
+        })) as Class[];
 
         return classes;
     } catch (error) {

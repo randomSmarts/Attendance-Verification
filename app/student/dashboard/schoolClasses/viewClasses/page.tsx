@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import AttendanceButton from 'app/ui/attendance/button';
 import { getUserClassesByEmail } from 'app/lib/actions'; // Ensure this points to your modified function
 
 const UserClassesPage = () => {
@@ -28,7 +27,7 @@ const UserClassesPage = () => {
 
     return (
         <div style={styles.container}>
-            <h1>User Classes</h1>
+            <h1>Your Classes</h1>
             <form onSubmit={handleEmailSubmit} style={styles.form}>
                 <input
                     type="email"
@@ -48,11 +47,11 @@ const UserClassesPage = () => {
                             <h2>{cls.name}</h2>
                             <p>Timings:</p>
                             <ul>
-                                {/* Map through the timings array and display each day and time */}
-                                {Array.isArray(cls.timings) ? (
+                                {/* Ensure that timings are properly displayed */}
+                                {Array.isArray(cls.timings) && cls.timings.length > 0 ? (
                                     cls.timings.map((timing, index) => (
                                         <li key={index}>
-                                            <strong>{timing.day}</strong>: {timing.time}
+                                            <strong>{timing.day}</strong>: {timing.startTime} - {timing.endTime}
                                         </li>
                                     ))
                                 ) : (
