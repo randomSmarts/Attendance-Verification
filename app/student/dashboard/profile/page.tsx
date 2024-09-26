@@ -64,7 +64,7 @@ export default function ViewUserInfo() {
                     <p><strong>Name:</strong> {userInfo.name}</p>
                     <p><strong>Email:</strong> {userInfo.email}</p>
                     <p><strong>Role:</strong> {userInfo.role}</p>
-                    <p><strong>Location:</strong> Latitude: {userInfo.locationLatitude}, Longitude: {userInfo.locationLongitude}</p>
+                    <p><strong>Location:</strong> Latitude: {userInfo.locationlatitude}, Longitude: {userInfo.locationlongitude}</p>
                     <p><strong>Attendance Status:</strong> {userInfo.present ? 'Present' : 'Absent'}</p>
 
                     <h3 className="text-lg font-semibold mt-4">Enrolled Classes:</h3>
@@ -72,7 +72,19 @@ export default function ViewUserInfo() {
                         {userClasses.length > 0 ? (
                             userClasses.map((cls: any) => (
                                 <li key={cls.id}>
-                                    {cls.name} - {cls.timings}
+                                    <p>{cls.name}</p>
+                                    <ul>
+                                        {/* Loop through each timing for the class */}
+                                        {cls.timings && Array.isArray(cls.timings) ? (
+                                            cls.timings.map((timing: any, index: number) => (
+                                                <li key={index}>
+                                                    <strong>{timing.day}</strong>: {timing.time}
+                                                </li>
+                                            ))
+                                        ) : (
+                                            <li>No timings available.</li>
+                                        )}
+                                    </ul>
                                 </li>
                             ))
                         ) : (

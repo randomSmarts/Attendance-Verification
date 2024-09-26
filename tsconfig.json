@@ -25,6 +25,8 @@
     }
   },
   "include": [
+    "api/**/*",
+    "app/**/*",
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",

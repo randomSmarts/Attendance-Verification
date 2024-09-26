@@ -46,7 +46,19 @@ const UserClassesPage = () => {
                     {classes.map((cls) => (
                         <div key={cls.id} style={styles.classCard}>
                             <h2>{cls.name}</h2>
-                            <p>Timings: {cls.timings}</p>
+                            <p>Timings:</p>
+                            <ul>
+                                {/* Map through the timings array and display each day and time */}
+                                {Array.isArray(cls.timings) ? (
+                                    cls.timings.map((timing, index) => (
+                                        <li key={index}>
+                                            <strong>{timing.day}</strong>: {timing.time}
+                                        </li>
+                                    ))
+                                ) : (
+                                    <li>No timings available</li>
+                                )}
+                            </ul>
                         </div>
                     ))}
                 </div>

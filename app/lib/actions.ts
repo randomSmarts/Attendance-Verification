@@ -104,17 +104,21 @@ export const getUserInfoByEmail = async (email: string): Promise<User> => {
 
         const userClasses = Array.isArray(user.classes) ? user.classes : [];
 
+        // Fetch the class details for each class ID associated with the user
         const classesResult = await client.query(
-            `SELECT id FROM classes WHERE id = ANY($1::uuid[])`, [userClasses]
+            `SELECT id, name, timings FROM classes WHERE id = ANY($1::uuid[])`, [userClasses]
         );
 
-        const existingClassIds = new Set(classesResult.rows.map((row: any) => row.id));
-
-        const validUserClasses = userClasses.filter((classId: string) => existingClassIds.has(classId));
+        // Parse timings if it's stored as a JSON string
+        const validClasses = classesResult.rows.map((cls: any) => ({
+            id: cls.id,
+            name: cls.name,
+            timings: typeof cls.timings === 'string' ? JSON.parse(cls.timings) : cls.timings,  // Parse if string
+        }));
 
         return {
             ...user,
-            classes: validUserClasses
+            classes: validClasses
         };
     } catch (error) {
         console.error('Error fetching user info:', error);
@@ -127,11 +131,12 @@ export const getUserInfoByEmail = async (email: string): Promise<User> => {
 // Fetch classes for user by email
 export const fetchClassesForUserByEmail = async (email: string): Promise<Class[]> => {
     const client = await db.connect();
+
     try {
         const userResult = await client.query(
-            `SELECT id, classes FROM users WHERE email = $1`, [email]
+            `SELECT classes FROM users WHERE email = $1`, [email]
         );
-        const user = userResult.rows[0] as User;
+        const user = userResult.rows[0];
 
         if (!user) {
             throw new Error('User not found');
@@ -144,11 +149,17 @@ export const fetchClassesForUserByEmail = async (email: string): Promise<Class[]
             return [];
         }
 
+        // Fetch class details for each class ID
         const classesResult = await client.query(
             `SELECT id, name, timings FROM classes WHERE id = ANY($1::uuid[])`, [userClasses]
         );
 
-        return classesResult.rows as Class[];
+        // Parse timings if it's stored as JSONB
+        return classesResult.rows.map((cls: any) => ({
+            id: cls.id,
+            name: cls.name,
+            timings: typeof cls.timings === 'string' ? JSON.parse(cls.timings) : cls.timings,  // Parse if string
+        })) as Class[];
     } catch (error) {
         console.error('Error fetching user classes:', error);
         throw new Error('Failed to fetch classes');
@@ -156,6 +167,7 @@ export const fetchClassesForUserByEmail = async (email: string): Promise<Class[]
         client.release();
     }
 };
+
 
 // Check if user is a teacher by email
 export const isUserTeacherByEmail = async (email: string): Promise<boolean> => {
@@ -241,6 +253,102 @@ export const getTeacherIdByEmail = async (email: string): Promise<string> => {
     } catch (error) {
         console.error('Error fetching teacher ID:', error);
         throw new Error('Failed to fetch teacher ID');
+    } finally {
+        client.release();
+    }
+};
+
+
+export const joinClassByCode = async (email, classCode) => {
+    const client = await db.connect();
+    try {
+        // Step 1: Get the user (student) ID using the email
+        const userResult = await client.query('SELECT id, classes FROM users WHERE email = $1', [email]);
+        const user = userResult.rows[0];
+
+        if (!user) {
+            return { success: false, message: 'User (student) not found.' };
+        }
+
+        // Step 2: Get the class details using the class code
+        const classResult = await client.query('SELECT id, students FROM classes WHERE entryCode = $1', [classCode]);
+        const foundClass = classResult.rows[0];
+
+        if (!foundClass) {
+            return { success: false, message: 'Class code not found.' };
+        }
+
+        // Step 3: Check if the user (student) is already enrolled in the class
+        const studentsEnrolled = foundClass.students || []; // Ensure we have an array
+        if (studentsEnrolled.includes(user.id)) {
+            return { success: false, message: 'You are already enrolled in this class.' };
+        }
+
+        // Step 4: Enroll the user (student) in the class
+        // Concatenate the new student ID into the students array (assuming students is JSONB array)
+        await client.query(
+            `UPDATE classes SET students = students || $1::jsonb WHERE id = $2`,
+            [JSON.stringify([user.id]), foundClass.id]
+        );
+
+        // Step 5: Update the user's class list
+        await client.query(
+            `UPDATE users SET classes = classes || $1::jsonb WHERE id = $2`,
+            [JSON.stringify([foundClass.id]), user.id]
+        );
+
+        // Return success message
+        return { success: true, message: 'Successfully enrolled in the class.' };
+    } catch (error) {
+        console.error('Error joining class:', error);
+        return { success: false, message: 'Error joining class. Please try again later.' };
+    } finally {
+        client.release();
+    }
+};
+
+export const leaveClassByCode = async (email, classCode) => {
+    const client = await db.connect();
+    try {
+        // Step 1: Get the user (student) ID using the email
+        const userResult = await client.query('SELECT id, classes FROM users WHERE email = $1', [email]);
+        const user = userResult.rows[0];
+
+        if (!user) {
+            return { success: false, message: 'User (student) not found.' };
+        }
+
+        // Step 2: Get the class details using the class code
+        const classResult = await client.query('SELECT id, students FROM classes WHERE entryCode = $1', [classCode]);
+        const foundClass = classResult.rows[0];
+
+        if (!foundClass) {
+            return { success: false, message: 'Class code not found.' };
+        }
+
+        // Step 3: Check if the user (student) is enrolled in the class
+        const studentsEnrolled = foundClass.students || []; // Ensure we have an array
+        if (!studentsEnrolled.includes(user.id)) {
+            return { success: false, message: 'You are not enrolled in this class.' };
+        }
+
+        // Step 4: Remove the user (student) from the class
+        await client.query(
+            `UPDATE classes SET students = array_remove(students, $1) WHERE id = $2`,
+            [user.id, foundClass.id]
+        );
+
+        // Step 5: Remove the class from the user's class list
+        await client.query(
+            `UPDATE users SET classes = array_remove(classes, $1) WHERE id = $2`,
+            [foundClass.id, user.id]
+        );
+
+        // Return success message
+        return { success: true, message: 'Successfully left the class.' };
+    } catch (error) {
+        console.error('Error leaving class:', error);
+        return { success: false, message: 'Error leaving class. Please try again later.' };
     } finally {
         client.release();
     }
