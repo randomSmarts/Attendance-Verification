@@ -1,96 +1,94 @@
-export default function Page() {
-    return <p>Customers Page</p>;
-}
-
-/*'use client';
+'use client';
 
 import React, { useState } from 'react';
-import { getClassesByEmail, deleteClassById } from 'app/lib/actions';
+import { deleteClassByTeacher } from 'app/lib/actions'; // Import the action to delete a class
 
-export default function DeleteClass() {
+const DeleteClassPage = () => {
     const [email, setEmail] = useState('');
-    const [classes, setClasses] = useState<any[]>([]);
-    const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
-    const [message, setMessage] = useState<string | null>(null);
+    const [classCode, setClassCode] = useState('');
+    const [message, setMessage] = useState('');
 
-    const handleFetchClasses = async (e: React.FormEvent) => {
+    const handleDeleteClass = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            const fetchedClasses = await getClassesByEmail(email);
-            setClasses(fetchedClasses);
-        } catch (error) {
-            setMessage(`Error fetching classes: ${error.message}`);
-        }
-    };
 
-    const handleDeleteClasses = async () => {
-        if (selectedClassIds.length === 0) {
-            setMessage('Please select at least one class to delete.');
-            return;
-        }
+        // Call the deleteClassByTeacher function and handle the response
+        const response = await deleteClassByTeacher(email, classCode);
 
-        try {
-            for (const classId of selectedClassIds) {
-                await deleteClassById(classId);
-            }
-            setMessage('Classes deleted successfully!');
-            setClasses((prevClasses) => prevClasses.filter(classItem => !selectedClassIds.includes(classItem.id)));
-            setSelectedClassIds([]);
-        } catch (error) {
-            setMessage(`Error deleting classes: ${error.message}`);
-        }
-    };
+        setMessage(response.message); // Set the response message
 
-    const handleCheckboxChange = (classId: string) => {
-        setSelectedClassIds((prev) =>
-            prev.includes(classId)
-                ? prev.filter(id => id !== classId)
-                : [...prev, classId]
-        );
+        // Clear the input fields
+        setEmail('');
+        setClassCode('');
     };
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-2xl font-bold mb-4">Delete Classes</h1>
-            <form onSubmit={handleFetchClasses} className="mb-8">
-                <input
-                    type="email"
-                    placeholder="Teacher Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="border p-2 w-full mb-2"
-                    required
-                />
-                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
-                    Fetch Classes
-                </button>
-            </form>
-
-            {classes.length > 0 && (
-                <div>
-                    <h2 className="text-xl mb-2">Select Classes to Delete</h2>
-                    {classes.map((classItem) => (
-                        <div key={classItem.id} className="flex items-center mb-2">
-                            <input
-                                type="checkbox"
-                                value={classItem.id}
-                                checked={selectedClassIds.includes(classItem.id)}
-                                onChange={() => handleCheckboxChange(classItem.id)}
-                            />
-                            <label className="ml-2">{classItem.name}</label>
-                        </div>
-                    ))}
-                    <button
-                        onClick={handleDeleteClasses}
-                        className="bg-red-500 text-white px-4 py-2 rounded"
-                    >
-                        Delete Selected Classes
-                    </button>
+        <div style={styles.container}>
+            <h1>Delete a Class</h1>
+            <form onSubmit={handleDeleteClass} style={styles.form}>
+                <div style={styles.inputGroup}>
+                    <label htmlFor="email">Teacher Email:</label>
+                    <input
+                        type="email"
+                        id="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        style={styles.input}
+                    />
                 </div>
-            )}
-
-            {message && <div className="text-red-500 mb-4">{message}</div>}
+                <div style={styles.inputGroup}>
+                    <label htmlFor="classCode">Class Code:</label>
+                    <input
+                        type="text"
+                        id="classCode"
+                        value={classCode}
+                        onChange={(e) => setClassCode(e.target.value)}
+                        required
+                        style={styles.input}
+                    />
+                </div>
+                <button type="submit" style={styles.button}>Delete Class</button>
+            </form>
+            {message && <p style={styles.message}>{message}</p>}
         </div>
     );
-}
-*/
+};
+
+// Styles for the page
+const styles = {
+    container: {
+        maxWidth: '400px',
+        margin: '0 auto',
+        padding: '20px',
+        border: '1px solid #ccc',
+        borderRadius: '8px',
+        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+    },
+    form: {
+        display: 'flex',
+        flexDirection: 'column',
+    },
+    inputGroup: {
+        marginBottom: '15px',
+    },
+    input: {
+        width: '100%',
+        padding: '10px',
+        borderRadius: '4px',
+        border: '1px solid #ccc',
+    },
+    button: {
+        padding: '10px',
+        backgroundColor: '#f44336', // Red for deletion
+        color: 'white',
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+    },
+    message: {
+        marginTop: '15px',
+        fontWeight: 'bold',
+    },
+};
+
+export default DeleteClassPage;

@@ -370,3 +370,61 @@ export const leaveClassByCode = async (email, classCode) => {
         client.release();
     }
 };
+
+
+export const deleteClassByTeacher = async (email, classCode) => {
+    const client = await db.connect();
+    try {
+        // Step 1: Verify that the user is a teacher
+        const teacherResult = await client.query('SELECT id, role FROM users WHERE email = $1', [email]);
+        const teacher = teacherResult.rows[0];
+
+        if (!teacher) {
+            return { success: false, message: 'Teacher not found.' };
+        }
+
+        if (teacher.role !== 'teacher') {
+            return { success: false, message: 'Only teachers can delete a class.' };
+        }
+
+        // Step 2: Get the class details using the class code
+        const classResult = await client.query('SELECT id, students FROM classes WHERE entryCode = $1', [classCode]);
+        const foundClass = classResult.rows[0];
+
+        if (!foundClass) {
+            return { success: false, message: 'Class code not found.' };
+        }
+
+        // Step 3: Get all students enrolled in the class
+        const studentsEnrolled = foundClass.students || [];
+
+        if (studentsEnrolled.length > 0) {
+            // Step 4: Remove the class from each student's classes field
+            const updateUsersResponse = await client.query(
+                `UPDATE users 
+                 SET classes = classes - $1  -- Remove the class from each student
+                 WHERE id = ANY($2)`,  // Use the array of student IDs
+                [foundClass.id, studentsEnrolled]
+            );
+
+            if (updateUsersResponse.rowCount === 0) {
+                return { success: false, message: 'Failed to update student classes.' };
+            }
+        }
+
+        // Step 5: Delete the class from the classes table
+        const deleteClassResponse = await client.query('DELETE FROM classes WHERE id = $1', [foundClass.id]);
+
+        if (deleteClassResponse.rowCount === 0) {
+            return { success: false, message: 'Failed to delete the class.' };
+        }
+
+        // Return success message
+        return { success: true, message: 'Class deleted successfully.' };
+    } catch (error) {
+        console.error('Error deleting class:', error);
+        return { success: false, message: 'Error deleting class. Please try again later.' };
+    } finally {
+        client.release();
+    }
+};
