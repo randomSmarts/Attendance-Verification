@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { markAttendance } from 'app/lib/actions'; // Ensure correct import path for markAttendance function
-import { checkAttendanceTiming, checkGeolocation } from 'app/student/dashboard/attendance/utils'; // Ensure correct import path for utility functions
+import { markAttendance } from 'app/lib/actions'; // Import the markAttendance action
+import { checkAttendanceTiming, checkGeolocation } from 'app/student/dashboard/attendance/utils'; // Utility functions
 
-const AttendanceButton = ({ classes, email }) => {
-    const [selectedClass, setSelectedClass] = useState(null);
+const AttendanceButton = ({ email, classes }) => {
+    const [selectedClass, setSelectedClass] = useState('');
     const [message, setMessage] = useState('');
 
     const handleClassChange = (e) => {
@@ -11,29 +11,28 @@ const AttendanceButton = ({ classes, email }) => {
     };
 
     const handleAttendance = async () => {
-        // Ensure a class is selected
         if (!selectedClass) {
             setMessage('Please select a class.');
             return;
         }
 
-        // Call the timing and geolocation functions
-        const isWithinTime = await checkAttendanceTiming(selectedClass); // Check if within time window
-        const isWithinLocation = await checkGeolocation(); // Check if within location range
+        // Check attendance timing
+        const isWithinTime = await checkAttendanceTiming(selectedClass);
 
-        if (isWithinTime && isWithinLocation) {
-            // Call markAttendance to update the database if both checks pass
-            const response = await markAttendance(selectedClass, email);
+        // Check if the user is within geolocation range
+        const { success, latitude, longitude } = await checkGeolocation();
+
+        if (isWithinTime && success) {
+            // Mark attendance if both checks pass
+            const response = await markAttendance(selectedClass, email, latitude, longitude);
             setMessage(response.message);
         } else {
-            // If either check fails, display an appropriate message
             setMessage('You are not within the allowed time or location.');
         }
     };
 
     return (
         <div>
-            {/* Dropdown to select a class */}
             <select onChange={handleClassChange} value={selectedClass}>
                 <option value="">Select a class</option>
                 {classes.map((classData) => (
@@ -43,10 +42,8 @@ const AttendanceButton = ({ classes, email }) => {
                 ))}
             </select>
 
-            {/* Button to mark attendance */}
             <button onClick={handleAttendance}>Mark Attendance</button>
 
-            {/* Display message to the user */}
             {message && <p>{message}</p>}
         </div>
     );

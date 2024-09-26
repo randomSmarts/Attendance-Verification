@@ -12,25 +12,39 @@ export default function ManageClasses() {
     const [message, setMessage] = useState<string | null>(null);
     const [teacherId, setTeacherId] = useState<string | null>(null);
 
+
     useEffect(() => {
         const fetchTeacherId = async () => {
-            if (email) {
-                try {
-                    const id = await getTeacherIdByEmail(email);
-                    setTeacherId(id);
-                } catch (error) {
-                    console.error('Error fetching teacher ID:', error);
-                }
+            if (!email) {
+                setMessage('Please enter a valid email.');
+                return;
+            }
+
+            try {
+                const id = await getTeacherIdByEmail(email);
+                setTeacherId(id);
+            } catch (error) {
+                console.error('Error fetching teacher ID:', error);
+                setMessage('Error fetching teacher ID. Please check the email.');
             }
         };
 
-        fetchTeacherId();
-    }, [email]); // Fetch teacher ID whenever the email changes
+        if (email) {
+            fetchTeacherId();
+        }
+    }, [email]);
 
     const handleAddClass = async (e: React.FormEvent) => {
         e.preventDefault();
+
         if (!teacherId) {
-            setMessage('Please enter a valid teacher email.');
+            setMessage('Please enter a valid teacher email and make sure it is valid.');
+            return;
+        }
+
+        // Validate timings
+        if (timings.some(timing => !timing.day || !timing.startTime || !timing.endTime)) {
+            setMessage('Please fill out all timing fields.');
             return;
         }
 
@@ -52,8 +66,9 @@ export default function ManageClasses() {
     };
 
     const handleTimingChange = (index: number, field: string, value: string) => {
-        const newTimings = [...timings];
-        newTimings[index][field] = value;
+        const newTimings = timings.map((timing, i) =>
+            i === index ? { ...timing, [field]: value } : timing
+        );
         setTimings(newTimings);
     };
 

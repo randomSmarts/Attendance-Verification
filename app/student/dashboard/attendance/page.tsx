@@ -2,19 +2,18 @@
 
 import React, { useState } from 'react';
 import AttendanceButton from 'app/ui/attendance/button';
-import { getUserClassesByEmail } from 'app/lib/actions'; // Updated function to fetch classes by email
+import { getUserClassesByEmail2 } from 'app/lib/actions'; // Fetch classes by email
 
 const Page = () => {
     const [email, setEmail] = useState('');
     const [classes, setClasses] = useState([]);
     const [message, setMessage] = useState('');
 
-    // Specify the event type explicitly: React.FormEvent<HTMLFormElement>
     const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         try {
-            const fetchedClasses = await getUserClassesByEmail(email); // Directly get the classes array
-            setClasses(fetchedClasses); // Set the classes state with the fetched classes
+            const fetchedClasses = await getUserClassesByEmail2(email); // Fetch classes
+            setClasses(fetchedClasses); // Set classes in state
             if (fetchedClasses.length === 0) {
                 setMessage('No classes found for this email.');
             } else {

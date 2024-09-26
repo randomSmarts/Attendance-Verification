@@ -3,6 +3,8 @@
 import { AuthError } from 'next-auth';
 import { db } from '@vercel/postgres';
 import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcrypt'; // Import bcrypt
+import { NextResponse } from 'next/server';
 
 // Define user and class types
 interface User {
@@ -18,6 +20,87 @@ interface Class {
     name: string;
     timings: any;
 }
+
+// actions.ts
+
+
+// Function to create an account
+
+export async function createAccount(id, fullname, email, password, classes = [], locationlatitude = '0.0', locationlongitude = '0.0', present = false, role = 'student') {
+    const client = await db.connect(); // Get a database client connection
+    const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
+
+    // Define the default UUID for classes
+    const defaultClassUUID = '2e572a46-b8a4-43ee-94ae-c689a2b2e334';
+
+    try {
+        await client.query('BEGIN'); // Start a transaction
+
+        // Insert the new user into the database
+        await client.query(`
+            INSERT INTO users (id, fullname, email, password, classes, locationlatitude, locationlongitude, present, role)
+            VALUES (
+              $1, $2, $3, $4, $5, $6, $7, $8, $9
+            )
+            ON CONFLICT (email) DO NOTHING;  -- Prevent duplicate email entries
+        `, [
+            id || uuidv4(),  // Use provided ID or auto-generate if null
+            fullname,
+            email,
+            hashedPassword,
+            JSON.stringify(classes.length > 0 ? classes : [defaultClassUUID]), // Default to the given UUID if no classes are provided
+            locationlatitude, // Set default to '0.0'
+            locationlongitude, // Set default to '0.0'
+            present,
+            role
+        ]);
+
+        await client.query('COMMIT'); // Commit the transaction
+        return { success: true, message: 'Account created successfully' }; // Success response
+    } catch (error) {
+        await client.query('ROLLBACK'); // Rollback on error
+        console.error('Error creating account:', error); // Log the error
+        return { success: false, message: 'Error creating account' }; // User-friendly error response
+    } finally {
+        client.release(); // Release the client connection
+    }
+}
+
+// Function to login
+export async function login(email: string, password: string) {
+    try {
+        // Fetch the user from the database using email
+        const userResult = await db.query(`
+            SELECT * FROM users WHERE email = $1;
+        `, [email]);
+
+        const user = userResult.rows[0];
+
+        if (!user) {
+            return { success: false, message: 'User not found.' };
+        }
+
+        // Compare the provided password with the hashed password in the database
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            return { success: false, message: 'Invalid password.' };
+        }
+
+        // Check if the role is either 'student' or 'teacher'
+        if (user.role === 'student') {
+            return { success: true, role: 'student' }; // Redirect to student dashboard
+        } else if (user.role === 'teacher') {
+            return { success: true, role: 'teacher' }; // Redirect to teacher dashboard
+        } else {
+            return { success: false, message: 'Unknown role. Please contact support.' };
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        return { success: false, message: 'Error during login.' };
+    }
+}
+
 
 // Fetch user classes by email
 export const getUserClassesByEmail = async (email: string): Promise<Class[]> => {
@@ -53,33 +136,6 @@ export const getUserClassesByEmail = async (email: string): Promise<Class[]> => 
     } catch (error) {
         console.error('Error fetching user classes:', error);
         throw new Error('Failed to fetch classes');
-    } finally {
-        client.release();
-    }
-};
-
-// Mark attendance
-export const markAttendance = async (classId: string, email: string): Promise<{ message: string }> => {
-    const client = await db.connect();
-    try {
-        const { rows: userId } = await client.query(
-            `SELECT id, classes FROM users WHERE email = $1`, [email]
-        );
-
-        if (userId.length === 0) throw new Error('User not found');
-
-        await client.query(
-            `UPDATE users
-             SET present = true
-             WHERE id = $1
-             AND classes @> ARRAY[$2::uuid]`, [userId[0].id, classId]
-        );
-
-        console.log(`Attendance for class ID: ${classId} has been marked as present for user: ${email}`);
-        return { message: 'Attendance marked successfully' };
-    } catch (error) {
-        console.error('Error marking attendance:', error);
-        throw new Error('Failed to mark attendance');
     } finally {
         client.release();
     }
@@ -158,7 +214,7 @@ export const fetchClassesForUserByEmail = async (email: string): Promise<Class[]
         return classesResult.rows.map((cls: any) => ({
             id: cls.id,
             name: cls.name,
-            timings: typeof cls.timings === 'string' ? JSON.parse(cls.timings) : cls.timings,  // Parse if string
+            timings: Array.isArray(cls.timings) ? cls.timings : JSON.parse(cls.timings)  // Parse timings if it's a string
         })) as Class[];
     } catch (error) {
         console.error('Error fetching user classes:', error);
@@ -200,10 +256,15 @@ export const fetchStudentsByClassId = async (classId: string): Promise<User[]> =
             throw new Error('Class not found');
         }
 
-        const studentIds = Array.isArray(classData.students) ? classData.students : [];
+        const studentIds = Array.isArray(classData.students) ? classData.students : JSON.parse(classData.students);
+
+        if (studentIds.length === 0) {
+            console.log('No students found for this class.');
+            return [];
+        }
 
         const studentsResult = await client.query(
-            `SELECT id, fullName AS name, email, present FROM users WHERE id = ANY($1::uuid[])`, [studentIds]
+            `SELECT id, fullname AS name, email, present FROM users WHERE id = ANY($1::uuid[])`, [studentIds]
         );
 
         return studentsResult.rows as User[];
@@ -221,9 +282,10 @@ export const addClass = async (teacherId: string, name: string, entryCode: strin
     const classId = uuidv4();
 
     try {
+        // Insert the new class with properly formatted timings and students
         await client.query(
             `INSERT INTO classes (id, name, entrycode, teacherid, timings, students)
-             VALUES ($1, $2, $3, $4, $5, $6)`,
+             VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb)`, // Store timings and students as JSONB
             [classId, name, entryCode, teacherId, JSON.stringify(timings), JSON.stringify(students)]
         );
 
@@ -424,6 +486,75 @@ export const deleteClassByTeacher = async (email, classCode) => {
     } catch (error) {
         console.error('Error deleting class:', error);
         return { success: false, message: 'Error deleting class. Please try again later.' };
+    } finally {
+        client.release();
+    }
+};
+
+export const getUserClassesByEmail2 = async (email: string): Promise<Class[]> => {
+    const client = await db.connect();
+    try {
+        console.log('Searching for user classes with email:', email);
+
+        // Fetch user details based on the provided email
+        const userResult = await client.query(
+            `SELECT id, classes, present FROM users WHERE email = $1`, [email]
+        );
+        const user = userResult.rows[0] as User;
+
+        // Check if the user exists
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        let userClasses = Array.isArray(user.classes) ? user.classes : [];
+
+        console.log('User classes UUIDs:', userClasses);
+
+        const classesResult = await client.query(
+            `SELECT id, name, timings FROM classes WHERE id = ANY($1::uuid[])`, [userClasses]
+        );
+        const classes = classesResult.rows as Class[];
+
+        if (classes.length === 0) {
+            console.log('No classes found for this user.');
+        }
+
+        return classes;
+    } catch (error) {
+        console.error('Error fetching user classes:', error);
+        throw new Error('Failed to fetch classes');
+    } finally {
+        client.release();
+    }
+};
+
+// Mark the user's attendance
+export const markAttendance = async (classId: string, email: string, latitude: number, longitude: number) => {
+    const client = await db.connect();
+    try {
+        // Fetch the user by email
+        const userResult = await client.query(`SELECT id FROM users WHERE email = $1`, [email]);
+        const user = userResult.rows[0];
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        // Update the user's attendance (set present to true, update latitude and longitude)
+        const updateResult = await client.query(
+            `UPDATE users SET present = true, locationLatitude = $1, locationLongitude = $2 WHERE id = $3`,
+            [latitude, longitude, user.id]
+        );
+
+        if (updateResult.rowCount === 0) {
+            throw new Error('Failed to mark attendance');
+        }
+
+        return { success: true, message: 'Attendance marked successfully.' };
+    } catch (error) {
+        console.error('Error marking attendance:', error);
+        throw new Error('Failed to mark attendance');
     } finally {
         client.release();
     }

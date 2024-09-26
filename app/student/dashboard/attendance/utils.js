@@ -1,34 +1,47 @@
+// Check if the current time is within 5 minutes before and 10 minutes after class start time
 export const checkAttendanceTiming = async (classId) => {
     const response = await fetch(`/api/classTiming/${classId}`);
-    const { startTime } = await response.json();
+    const { timings } = await response.json(); // Get the timings for the class
     const now = new Date();
-    const classStart = new Date(startTime);
 
+    // Find the current day
+    const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' });
+    const classTime = timings.find(timing => timing.day === currentDay);
+
+    if (!classTime) return false; // No class today
+
+    const [startTimeStr] = classTime.time.split(" - ");
+    const classStart = new Date(now.toDateString() + ' ' + startTimeStr);
+
+    // Check if within the time window (5 mins before to 10 mins after)
     return now >= new Date(classStart.getTime() - 5 * 60 * 1000) &&
-        now <= new Date(classStart.getTime() + 5 * 60 * 1000);
+        now <= new Date(classStart.getTime() + 10 * 60 * 1000);
 };
 
+// Check if the user is within 20 feet of the class location
 export const checkGeolocation = () => {
     return new Promise((resolve) => {
         if (!navigator.geolocation) {
-            resolve(false);
+            resolve({ success: false });
             return;
         }
 
-        navigator.geolocation.getCurrentPosition((position) => {
+        navigator.geolocation.getCurrentPosition(async (position) => {
             const { latitude, longitude } = position.coords;
-            const targetLocation = { latitude: 100, longitude: -122.419418 }; // Target location
-            const distance = calculateDistance(latitude, longitude, targetLocation.latitude, targetLocation.longitude);
 
-            // Log current position and distance for debugging
-            console.log('User Latitude:', latitude, 'User Longitude:', longitude);
-            console.log('Distance to target (feet):', distance);
+            // Fetch the class location (latitude and longitude)
+            const classResponse = await fetch(`/api/classLocation/${classId}`);
+            const { latitude: targetLat, longitude: targetLon } = await classResponse.json();
 
-            resolve(distance <= 20); // Check if within 20 feet (or increase this threshold)
-        }, () => resolve(false));
+            const distance = calculateDistance(latitude, longitude, targetLat, targetLon);
+
+            // Resolve with success if distance is within 20 feet
+            resolve({ success: distance <= 20, latitude, longitude });
+        }, () => resolve({ success: false }));
     });
 };
 
+// Calculate the distance between two coordinates (returns distance in feet)
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 3963; // Radius of Earth in miles
     const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -37,6 +50,6 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
         Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
         Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c; // Distance in miles
-    return distance * 5280; // Convert to feet
+    const distanceInMiles = R * c; // Distance in miles
+    return distanceInMiles * 5280; // Convert to feet
 };

@@ -2,8 +2,9 @@
 'use client';
 
 import AcmeLogo from '@/app/ui/acme-logo';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createAccount, login } from 'app/lib/actions'; // Import your actions
 
 export default function Page() {
     const router = useRouter();
@@ -29,44 +30,62 @@ export default function Page() {
 
     const handleCreateAccount = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setMessage('Your account has been created, now please log in.');
-        handleClosePopup();
-        // Implement actual account creation logic here
-    };
 
-    const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+        // Retrieving all required fields
+        const fullname = (e.currentTarget.elements.namedItem('fullname') as HTMLInputElement).value;
         const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value;
         const password = (e.currentTarget.elements.namedItem('password') as HTMLInputElement).value;
 
-        try {
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email,
-                    password,
-                    accountType: loginAccountType,
-                }),
-            });
+        // Pass an empty array for classes, so it defaults to the UUID
+        const classes = [];
 
-            if (!response.ok) {
-                // pass
-            }
+        // Call the createAccount function
+        const result = await createAccount(
+            crypto.randomUUID(), // Auto-generate a UUID for the user
+            fullname,
+            email,
+            password,
+            classes, // Empty classes array, it will default to the UUID in the backend
+            '0.0', // Default location latitude
+            '0.0', // Default location longitude
+            false, // Default present status
+            accountType // Role of the user (student/teacher)
+        );
 
-            const data = await response.json();
-            if (data.success) {
-                router.push(loginAccountType === 'student' ? '/studentDashboard' : '/teacherDashboard');
-            } else {
-                setMessage(data.message || 'Login failed. Please check your credentials and try again.');
-            }
-        } catch (error) {
-            console.error('Login error:', error);
-            setMessage('Login error');
+        if (result.success) {
+            setMessage('Your account has been created, now please log in.');
+            handleClosePopup();
+        } else {
+            setMessage(result.message || 'Account creation failed.');
         }
     };
+
+
+
+
+    const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        // Retrieve the email and password from the form
+        const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value;
+        const password = (e.currentTarget.elements.namedItem('password') as HTMLInputElement).value;
+
+        // Call the login function to authenticate the user
+        const result = await login(email, password);
+
+        // Redirect to the correct dashboard based on the user's role
+        if (result.success) {
+            if (result.role === 'student') {
+                router.push('/student/dashboard'); // Redirect to student dashboard
+            } else if (result.role === 'teacher') {
+                router.push('/teacher/dashboard'); // Redirect to teacher dashboard
+            }
+        } else {
+            // Show an error message if login fails
+            setMessage(result.message || 'Login failed. Please check your credentials and try again.');
+        }
+    };
+
 
     return (
         <main className="flex min-h-screen flex-col p-6">
@@ -110,9 +129,9 @@ export default function Page() {
                     <div className="bg-white rounded-lg p-6 w-80">
                         <h2 className="text-xl mb-4">Create an Account</h2>
                         <form onSubmit={handleCreateAccount}>
-                            <input type="text" placeholder="Username" className="border p-2 w-full mb-2" required />
-                            <input type="email" placeholder="Email" className="border p-2 w-full mb-2" required />
-                            <input type="password" placeholder="Password" className="border p-2 w-full mb-2" required />
+                            <input type="text" name="fullname" placeholder="Full Name" className="border p-2 w-full mb-2" required />
+                            <input type="email" name="email" placeholder="Email" className="border p-2 w-full mb-2" required />
+                            <input type="password" name="password" placeholder="Password" className="border p-2 w-full mb-2" required />
                             <label htmlFor="accountType" className="block mb-2">I am a:</label>
                             <select
                                 id="accountType"

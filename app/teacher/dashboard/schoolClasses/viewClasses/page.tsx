@@ -14,6 +14,12 @@ const UserClassesPage = () => {
 
     const handleEmailSubmit = async (e) => {
         e.preventDefault();
+
+        if (!email) {
+            setMessage('Please enter a valid email.');
+            return;
+        }
+
         try {
             const result = await fetchClassesForUserByEmail(email);
             setClasses(result);
@@ -68,10 +74,10 @@ const UserClassesPage = () => {
                             <p>Timings:</p>
                             <ul>
                                 {/* Map through the timings array and display each day and time */}
-                                {Array.isArray(cls.timings) ? (
+                                {Array.isArray(cls.timings) && cls.timings.length > 0 ? (
                                     cls.timings.map((timing, index) => (
                                         <li key={index}>
-                                            <strong>{timing.day}</strong>: {timing.time}
+                                            <strong>{timing.day}</strong>: {timing.startTime} - {timing.endTime}
                                         </li>
                                     ))
                                 ) : (
