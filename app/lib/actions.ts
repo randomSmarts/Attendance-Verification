@@ -332,17 +332,34 @@ export const leaveClassByCode = async (email, classCode) => {
             return { success: false, message: 'You are not enrolled in this class.' };
         }
 
-        // Step 4: Remove the user (student) from the class
-        await client.query(
-            `UPDATE classes SET students = array_remove(students, $1) WHERE id = $2`,
+        // Log the data to inspect the values
+        console.log("User ID: ", user.id);
+        console.log("Class ID: ", foundClass.id);
+        console.log("Students Enrolled: ", studentsEnrolled);
+
+        // Step 4: Remove the user (student) from the class (JSONB modification)
+        const updateClassResponse = await client.query(
+            `UPDATE classes 
+             SET students = students - $1  -- Use the JSONB removal operator
+             WHERE id = $2`,
             [user.id, foundClass.id]
         );
 
-        // Step 5: Remove the class from the user's class list
-        await client.query(
-            `UPDATE users SET classes = array_remove(classes, $1) WHERE id = $2`,
+        if (updateClassResponse.rowCount === 0) {
+            return { success: false, message: 'Failed to update the class students.' };
+        }
+
+        // Step 5: Remove the class from the user's class list (JSONB modification)
+        const updateUserResponse = await client.query(
+            `UPDATE users 
+             SET classes = classes - $1  -- Use the JSONB removal operator
+             WHERE id = $2`,
             [foundClass.id, user.id]
         );
+
+        if (updateUserResponse.rowCount === 0) {
+            return { success: false, message: 'Failed to update user classes.' };
+        }
 
         // Return success message
         return { success: true, message: 'Successfully left the class.' };
