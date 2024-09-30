@@ -151,6 +151,7 @@ export const getUserInfoByEmail = async (email: string): Promise<User> => {
     const client = await db.connect();
 
     try {
+        // Fetch user details from the database
         const userResult = await client.query(
             `SELECT id, fullName AS name, email, classes, "locationlatitude", "locationlongitude", present, role
              FROM users WHERE email = $1`,
@@ -165,16 +166,20 @@ export const getUserInfoByEmail = async (email: string): Promise<User> => {
 
         const userClasses = Array.isArray(user.classes) ? user.classes : [];
 
-        // Fetch the class details for each class ID associated with the user
+        if (userClasses.length === 0) {
+            return { ...user, classes: [] };  // Return early if no classes found
+        }
+
+        // Fetch the class details for the user
         const classesResult = await client.query(
             `SELECT id, name, timings FROM classes WHERE id = ANY($1::uuid[])`, [userClasses]
         );
 
-        // Parse timings if it's stored as a JSON string
+        // Parse timings, ensure they are handled as arrays
         const validClasses = classesResult.rows.map((cls: any) => ({
             id: cls.id,
             name: cls.name,
-            timings: typeof cls.timings === 'string' ? JSON.parse(cls.timings) : cls.timings,  // Parse if string
+            timings: Array.isArray(cls.timings) ? cls.timings : JSON.parse(cls.timings),  // Ensure timings are parsed
         }));
 
         return {
@@ -215,11 +220,11 @@ export const fetchClassesForUserByEmail = async (email: string): Promise<Class[]
             `SELECT id, name, timings FROM classes WHERE id = ANY($1::uuid[])`, [userClasses]
         );
 
-        // Parse timings if it's stored as JSONB
+        // Parse timings if it's stored as JSONB or JSON string
         return classesResult.rows.map((cls: any) => ({
             id: cls.id,
             name: cls.name,
-            timings: Array.isArray(cls.timings) ? cls.timings : JSON.parse(cls.timings)  // Parse timings if it's a string
+            timings: Array.isArray(cls.timings) ? cls.timings : JSON.parse(cls.timings),  // Parse timings if it's a string
         })) as Class[];
     } catch (error) {
         console.error('Error fetching user classes:', error);
@@ -228,6 +233,7 @@ export const fetchClassesForUserByEmail = async (email: string): Promise<Class[]
         client.release();
     }
 };
+
 
 
 // Check if user is a teacher by email

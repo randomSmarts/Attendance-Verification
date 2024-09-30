@@ -78,7 +78,7 @@ export default function ViewUserInfo() {
                                         {cls.timings && Array.isArray(cls.timings) ? (
                                             cls.timings.map((timing: any, index: number) => (
                                                 <li key={index}>
-                                                    <strong>{timing.day}</strong>: {timing.time}
+                                                    <strong>{timing.day}</strong>: {timing.startTime} - {timing.endTime}
                                                 </li>
                                             ))
                                         ) : (

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { getUserInfoByEmail } from 'app/lib/actions';
+import { getUserInfoByEmail } from 'app/lib/actions'; // Import the function to fetch user info
 
 // Define the structure of the expected user info
 interface UserInfo {
@@ -11,7 +11,7 @@ interface UserInfo {
     classes: {
         id: string;
         name: string;
-        timings: string;
+        timings: { day: string; startTime: string; endTime: string }[];
     }[];
 }
 
@@ -27,7 +27,7 @@ export default function ViewUserInfo() {
         setError(null);
 
         try {
-            const data: UserInfo = await getUserInfoByEmail(email); // Use proper typing here
+            const data: UserInfo = await getUserInfoByEmail(email);
             if (!data) {
                 throw new Error('User not found');
             }
@@ -84,18 +84,19 @@ export default function ViewUserInfo() {
                     <ul className="list-disc ml-5">
                         {userInfo.classes.map((cls) => (
                             <li key={cls.id}>
-                                {cls.name} -
-                                {Array.isArray(cls.timings) ? (
-                                    <ul>
-                                        {cls.timings.map((timing, index) => (
+                                <strong>{cls.name}</strong>
+                                <ul className="list-disc ml-5">
+                                    {/* Display timings properly */}
+                                    {Array.isArray(cls.timings) && cls.timings.length > 0 ? (
+                                        cls.timings.map((timing, index) => (
                                             <li key={index}>
-                                                {timing.day} at {timing.time}
+                                                {timing.day}: {timing.startTime} - {timing.endTime}
                                             </li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    `${cls.timings.day} at ${cls.timings.time}`
-                                )}
+                                        ))
+                                    ) : (
+                                        <li>No timings available</li>
+                                    )}
+                                </ul>
                             </li>
                         ))}
                     </ul>
