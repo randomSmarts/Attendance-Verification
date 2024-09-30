@@ -540,6 +540,7 @@ export const getUserClassesByEmail2 = async (email: string): Promise<Class[]> =>
     }
 };
 
+/*
 // Mark the user's attendance
 export const markAttendance = async (classId: string, email: string, latitude: number, longitude: number) => {
     const client = await db.connect();
@@ -570,3 +571,104 @@ export const markAttendance = async (classId: string, email: string, latitude: n
         client.release();
     }
 };
+*/
+
+// Fetch classes for user by email
+export const fetchClassesForUserByEmail3 = async (email: string): Promise<Class[]> => {
+    const client = await db.connect();
+    console.log('Fetching classes for email:', email);
+
+    try {
+        const userResult = await client.query(`SELECT classes FROM users WHERE email = $1`, [email]);
+        const user = userResult.rows[0];
+        console.log('User found:', user);
+
+        if (!user) {
+            console.log('User not found.');
+            throw new Error('User not found');
+        }
+
+        const userClasses = Array.isArray(user.classes) ? user.classes : [];
+        console.log('Classes for user:', userClasses);
+
+        if (userClasses.length === 0) {
+            console.log('No classes found.');
+            return [];
+        }
+
+        const classesResult = await client.query(`SELECT id, name FROM classes WHERE id = ANY($1::uuid[])`, [userClasses]);
+        console.log('Classes fetched from DB:', classesResult.rows);
+
+        return classesResult.rows;
+    } catch (error) {
+        console.error('Error fetching classes:', error);
+        throw new Error('Failed to fetch classes.');
+    } finally {
+        client.release();
+        console.log('Class fetching process complete.');
+    }
+};
+
+// Mark attendance logic and update user location
+export const markAttendance = async (email: string, classId: string, present: boolean, locationCoords = null) => {
+    const client = await db.connect();
+    console.log('Marking attendance for email:', email, 'classId:', classId, 'present:', present);
+
+    try {
+        // Step 1: Get the student by email
+        const userResult = await client.query(`SELECT id, present FROM users WHERE email = $1`, [email]);
+        const user = userResult.rows[0];
+        console.log('Student data found:', user);
+
+        if (!user) throw new Error('User not found');
+
+        // Update user's location if coordinates are provided
+        if (locationCoords) {
+            console.log('Updating user location:', locationCoords);
+            await client.query(
+                `UPDATE users SET locationlatitude = $1, locationlongitude = $2 WHERE email = $3`,
+                [locationCoords.latitude, locationCoords.longitude, email]
+            );
+            console.log('User location updated successfully.');
+        }
+
+        // Step 2: Check time window for the class
+        const classResult = await client.query(`SELECT timings FROM classes WHERE id = $1`, [classId]);
+        const classData = classResult.rows[0];
+        console.log('Class timings found:', classData);
+
+        // Fetch timings and validate the time window
+        const now = new Date();
+        const classStart = new Date(classData.timings[0].startTime); // Assuming first timing is relevant
+
+        const timeWindow = {
+            start: new Date(classStart.getTime() - 5 * 60 * 1000), // 5 mins before start
+            end: new Date(classStart.getTime() + 5 * 60 * 1000),   // 5 mins after start
+        };
+
+        console.log('Time window:', timeWindow);
+        console.log('Current time:', now);
+
+        if (now < timeWindow.start || now > timeWindow.end) {
+            console.log('Outside of allowed time window.');
+            return { success: false, message: 'Outside of allowed time window.' };
+        }
+
+        // Step 3: Update attendance based on location and time window
+        console.log('Updating attendance in the database...');
+        await client.query(
+            `UPDATE users SET present = $1 WHERE email = $2`,
+            [present, email]
+        );
+
+        console.log('Attendance updated successfully.');
+        return { success: true, message: 'Attendance updated successfully.' };
+    } catch (error) {
+        console.error('Error marking attendance:', error);
+        return { success: false, message: 'Failed to mark attendance.' };
+    } finally {
+        client.release();
+        console.log('Attendance marking process complete.');
+    }
+};
+
