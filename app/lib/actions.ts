@@ -637,19 +637,45 @@ export const markAttendance = async (email: string, classId: string, present: bo
         const classData = classResult.rows[0];
         console.log('Class timings found:', classData);
 
-        // Fetch timings and validate the time window
         const now = new Date();
-        const classStart = new Date(classData.timings[0].startTime); // Assuming first timing is relevant
-
-        const timeWindow = {
-            start: new Date(classStart.getTime() - 5 * 60 * 1000), // 5 mins before start
-            end: new Date(classStart.getTime() + 5 * 60 * 1000),   // 5 mins after start
-        };
-
-        console.log('Time window:', timeWindow);
         console.log('Current time:', now);
 
-        if (now < timeWindow.start || now > timeWindow.end) {
+        let isWithinTimeWindow = false;
+
+        for (const timing of classData.timings) {
+            const dayOfWeek = timing.day; // e.g., "Monday"
+            const startTimeString = timing.startTime; // e.g., "12:10AM"
+            console.log(`Processing timing: ${dayOfWeek} - ${startTimeString}`);
+
+            // Get the correct date for the next occurrence of the class day
+            const classDayDate = getNextClassDay(now, dayOfWeek);
+            if (!classDayDate) {
+                console.error(`Invalid class day: ${dayOfWeek}`);
+                continue;
+            }
+
+            // Construct a full date and time string
+            const classStart = new Date(`${classDayDate.toDateString()} ${convertTo24HourTime(startTimeString)}`);
+
+            if (isNaN(classStart.getTime())) {
+                console.error('Invalid class start date:', classStart);
+                continue;
+            }
+
+            const timeWindowStart = new Date(classStart.getTime() - 5 * 60 * 1000); // 5 minutes before start
+            const timeWindowEnd = new Date(classStart.getTime() + 5 * 60 * 1000);   // 5 minutes after start
+
+            console.log(`Class start: ${classStart}`);
+            console.log(`Time window: start = ${timeWindowStart}, end = ${timeWindowEnd}`);
+
+            // Check if current time is within the allowed window
+            if (now >= timeWindowStart && now <= timeWindowEnd) {
+                isWithinTimeWindow = true;
+                break; // No need to check further if one timing is valid
+            }
+        }
+
+        if (!isWithinTimeWindow) {
             console.log('Outside of allowed time window.');
             return { success: false, message: 'Outside of allowed time window.' };
         }
@@ -671,4 +697,44 @@ export const markAttendance = async (email: string, classId: string, present: bo
         console.log('Attendance marking process complete.');
     }
 };
+
+// Utility function to get the next occurrence of a specific day (e.g., next Monday)
+// Utility function to get the correct occurrence of a class day (today or next week)
+function getNextClassDay(currentDate: Date, targetDay: string): Date | null {
+    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const targetDayIndex = daysOfWeek.indexOf(targetDay);
+
+    if (targetDayIndex === -1) {
+        console.error(`Invalid day: ${targetDay}`);
+        return null;
+    }
+
+    const currentDayIndex = currentDate.getDay();
+
+    // If today is the target day, use today as the class day
+    if (currentDayIndex === targetDayIndex) {
+        console.log(`Class is today (${daysOfWeek[currentDayIndex]}).`);
+        return currentDate;  // Return today's date
+    }
+
+    // Otherwise, calculate the next occurrence of the target day
+    const daysUntilNextClass = (targetDayIndex + 7 - currentDayIndex) % 7 || 7;
+
+    const nextClassDate = new Date(currentDate);
+    nextClassDate.setDate(currentDate.getDate() + daysUntilNextClass);
+    return nextClassDate;
+}
+
+
+// Convert 12-hour time (e.g., "1:00PM") to 24-hour time (e.g., "13:00")
+function convertTo24HourTime(timeString: string): string {
+    const [time, modifier] = timeString.split(/(AM|PM)/i);
+    let [hours, minutes] = time.split(':').map(Number);
+
+    if (modifier.toLowerCase() === 'pm' && hours < 12) hours += 12;
+    if (modifier.toLowerCase() === 'am' && hours === 12) hours = 0;
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+}
+
 
