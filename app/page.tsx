@@ -75,6 +75,7 @@ export default function Page() {
 
         // Redirect to the correct dashboard based on the user's role
         if (result.success) {
+            //@ts-ignore
             if (result.role === 'student') {
                 router.push('/student/dashboard'); // Redirect to student dashboard
             } else if (result.role === 'teacher') {
