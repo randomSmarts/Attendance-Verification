@@ -60,7 +60,8 @@ export default function Page() {
         const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value;
         const password = (e.currentTarget.elements.namedItem('password') as HTMLInputElement).value;
 
-        const result = await login(email, password);
+        // Pass the selected role to the login function
+        const result = await login(email, password, loginAccountType);
 
         if (result.success) {
             // Store the user's email in localStorage
@@ -143,8 +144,10 @@ export default function Page() {
                     <div className="bg-white rounded-lg p-6 w-80">
                         <h2 className="text-xl mb-4">Log In</h2>
                         <form onSubmit={handleLogin}>
-                            <input type="email" name="email" placeholder="Email" className="border p-2 w-full mb-2" required />
-                            <input type="password" name="password" placeholder="Password" className="border p-2 w-full mb-4" required />
+                            <input type="email" name="email" placeholder="Email" className="border p-2 w-full mb-2"
+                                   required/>
+                            <input type="password" name="password" placeholder="Password"
+                                   className="border p-2 w-full mb-4" required/>
                             <label htmlFor="loginAccountType" className="block mb-2">I am a:</label>
                             <select
                                 id="loginAccountType"

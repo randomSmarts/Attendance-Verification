@@ -67,7 +67,7 @@ export async function createAccount(id, fullname, email, password, classes = [],
 }
 
 // Function to login
-export async function login(email: string, password: string) {
+export async function login(email: string, password: string, role: string) {
     try {
         const userResult = await db.query(`
             SELECT * FROM users WHERE email = $1;
@@ -85,13 +85,11 @@ export async function login(email: string, password: string) {
             return { success: false, message: 'Invalid password.' };
         }
 
-        if (user.role === 'student') {
-            return { success: true, role: 'student' };
-        } else if (user.role === 'teacher') {
-            return { success: true, role: 'teacher' };
-        } else {
-            return { success: false, message: 'Unknown role. Please contact support.' };
+        if (user.role !== role) {
+            return { success: false, message: `Invalid role. You are not registered as a ${role}.` };
         }
+
+        return { success: true, role: user.role };
     } catch (error) {
         console.error('Login error:', error);
         return { success: false, message: 'Error during login.' };
