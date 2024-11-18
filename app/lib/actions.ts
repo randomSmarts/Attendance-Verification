@@ -720,7 +720,6 @@ function getNextClassDay(currentDate: Date, targetDay: string): Date | null {
     return nextClassDate;
 }
 
-
 // Convert 12-hour time (e.g., "1:00PM") to 24-hour time (e.g., "13:00")
 function convertTo24HourTime(timeString: string): string {
     const [time, modifier] = timeString.split(/(AM|PM)/i);
