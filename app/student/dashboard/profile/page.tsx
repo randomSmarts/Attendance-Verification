@@ -1,58 +1,53 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getUserInfoByEmail, fetchClassesForUserByEmail } from 'app/lib/actions'; // Ensure correct import path
 
 export default function ViewUserInfo() {
-    const [email, setEmail] = useState('');
     const [userInfo, setUserInfo] = useState(null);
     const [userClasses, setUserClasses] = useState([]);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
+    useEffect(() => {
+        const fetchUserData = async () => {
+            setLoading(true);
+            setError(null);
 
-        try {
-            // Fetch the user info by email
-            const data = await getUserInfoByEmail(email);
-            setUserInfo(data);
+            const userEmail = localStorage.getItem('email');
+            console.log('Retrieved email from localStorage:', userEmail); // Debugging
 
-            // Fetch the classes for the user
-            const classesData = await fetchClassesForUserByEmail(email);
-            setUserClasses(classesData);
-        } catch (err: any) {
-            setError(err.message || 'An error occurred');
-        } finally {
-            setLoading(false);
-        }
-    };
+            if (!userEmail) {
+                setError('Error: Unable to retrieve your email. Please log in again.');
+                setLoading(false);
+                return;
+            }
+
+            try {
+                // Fetch the user info by email
+                const data = await getUserInfoByEmail(userEmail);
+                setUserInfo(data);
+
+                // Fetch the classes for the user
+                const classesData = await fetchClassesForUserByEmail(userEmail);
+                setUserClasses(classesData);
+            } catch (err: any) {
+                console.error('Error fetching user data:', err);
+                setError(err.message || 'An error occurred while fetching your data.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserData();
+    }, []);
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-2xl font-bold mb-4">View User Information</h1>
+            <h1 className="text-2xl font-bold mb-4">View Your Profile</h1>
 
-            <form onSubmit={handleSubmit} className="mb-8">
-                <label htmlFor="email" className="block mb-2 font-medium">Enter User Email:</label>
-                <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="border p-2 w-full mb-4"
-                    placeholder="user@example.com"
-                    required
-                />
-                <button
-                    type="submit"
-                    className="bg-blue-500 text-white px-4 py-2 rounded"
-                    disabled={loading}
-                >
-                    {loading ? 'Loading...' : 'Fetch User Info'}
-                </button>
-            </form>
+            {/* Loading state */}
+            {loading && <p className="text-blue-500 mb-4">Loading your information...</p>}
 
             {/* Error message */}
             {error && <div className="text-red-500 mb-4">{error}</div>}

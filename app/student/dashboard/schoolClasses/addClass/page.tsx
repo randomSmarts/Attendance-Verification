@@ -1,98 +1,82 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { joinClassByCode } from 'app/lib/actions'; // Import the joinClassByCode function
 
 const JoinClassPage = () => {
-    const [email, setEmail] = useState('');
     const [classCode, setClassCode] = useState('');
     const [message, setMessage] = useState('');
+    const [email, setEmail] = useState('');
+
+    // Retrieve email from localStorage on component mount
+    useEffect(() => {
+        const storedEmail = localStorage.getItem('email');
+        if (!storedEmail) {
+            setMessage('Error: Unable to retrieve your email. Please log in again.');
+        } else {
+            setEmail(storedEmail);
+        }
+    }, []);
 
     const handleJoinClass = async (e: React.FormEvent) => {
         e.preventDefault();
+        setMessage('');
 
-        // Call the joinClassByCode function and handle the response
-        const response = await joinClassByCode(email, classCode);
+        try {
+            const response = await joinClassByCode(email, classCode);
 
-        if (response.success) {
-            setMessage(response.message);
-        } else {
-            setMessage(response.message);
+            if (response.success) {
+                setMessage(`Success: ${response.message}`);
+            } else {
+                setMessage(`Error: ${response.message}`);
+            }
+        } catch (error) {
+            console.error('Error joining class:', error);
+            setMessage('An unexpected error occurred. Please try again.');
         }
 
-        // Clear the input fields
-        setEmail('');
+        // Clear the class code field
         setClassCode('');
     };
 
     return (
-        <div style={styles.container}>
-            <h1>Join a Class</h1>
-            <form onSubmit={handleJoinClass} style={styles.form}>
-                <div style={styles.inputGroup}>
-                    <label htmlFor="email">Email:</label>
-                    <input
-                        type="email"
-                        id="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        style={styles.input}
-                    />
-                </div>
-                <div style={styles.inputGroup}>
-                    <label htmlFor="classCode">Class Code:</label>
+        <div className="container mx-auto max-w-md p-6 bg-white shadow-md rounded-lg">
+            <h1 className="text-2xl font-bold mb-4 text-center">Join a Class</h1>
+
+            {message && (
+                <p
+                    className={`text-center font-medium mb-4 ${
+                        message.startsWith('Success') ? 'text-green-500' : 'text-red-500'
+                    }`}
+                >
+                    {message}
+                </p>
+            )}
+
+            <form onSubmit={handleJoinClass} className="space-y-4">
+                <div>
+                    <label htmlFor="classCode" className="block font-medium mb-2">
+                        Class Code:
+                    </label>
                     <input
                         type="text"
                         id="classCode"
                         value={classCode}
                         onChange={(e) => setClassCode(e.target.value)}
                         required
-                        style={styles.input}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-blue-200"
+                        placeholder="Enter class code"
                     />
                 </div>
-                <button type="submit" style={styles.button}>Join Class</button>
+                <button
+                    type="submit"
+                    className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-400 transition"
+                >
+                    Join Class
+                </button>
             </form>
-            {message && <p style={styles.message}>{message}</p>}
         </div>
     );
-};
-
-// Styles for the page
-const styles = {
-    container: {
-        maxWidth: '400px',
-        margin: '0 auto',
-        padding: '20px',
-        border: '1px solid #ccc',
-        borderRadius: '8px',
-        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-    },
-    form: {
-        display: 'flex',
-        flexDirection: 'column',
-    },
-    inputGroup: {
-        marginBottom: '15px',
-    },
-    input: {
-        width: '100%',
-        padding: '10px',
-        borderRadius: '4px',
-        border: '1px solid #ccc',
-    },
-    button: {
-        padding: '10px',
-        backgroundColor: '#4CAF50',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-    },
-    message: {
-        marginTop: '15px',
-        fontWeight: 'bold',
-    },
 };
 
 export default JoinClassPage;

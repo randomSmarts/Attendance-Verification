@@ -1,53 +1,75 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getUserClassesByEmail } from 'app/lib/actions'; // Ensure this points to your modified function
 
 const UserClassesPage = () => {
-    const [email, setEmail] = useState('');
     const [classes, setClasses] = useState([]);
     const [message, setMessage] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [email, setEmail] = useState('');
 
-    const handleEmailSubmit = async (e) => {
-        e.preventDefault();
+    // Retrieve email from localStorage on component mount
+    useEffect(() => {
+        const storedEmail = localStorage.getItem('email');
+        if (!storedEmail) {
+            setMessage('Error: Unable to retrieve your email. Please log in again.');
+        } else {
+            setEmail(storedEmail);
+            fetchClasses(storedEmail); // Fetch classes as soon as the email is retrieved
+        }
+    }, []);
+
+    const fetchClasses = async (userEmail: string) => {
+        setLoading(true);
+        setMessage('');
         try {
-            const result = await getUserClassesByEmail(email);
-            setClasses(result); // Assuming this function returns the classes array
-
+            const result = await getUserClassesByEmail(userEmail);
             if (result.length === 0) {
-                setMessage('No classes found for this email.');
+                setMessage('No classes found for your account.');
+                setClasses([]);
             } else {
-                setMessage('');
+                setClasses(result);
             }
         } catch (error) {
             console.error('Error fetching classes:', error);
             setMessage('Failed to fetch classes.');
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div style={styles.container}>
-            <h1>Your Classes</h1>
-            <form onSubmit={handleEmailSubmit} style={styles.form}>
-                <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    required
-                    style={styles.input}
-                />
-                <button type="submit" style={styles.button}>Get Classes</button>
-            </form>
-            {message && <p style={styles.message}>{message}</p>}
+        <div className="container mx-auto p-6 bg-white shadow-md rounded-lg">
+            <h1 className="text-2xl font-bold mb-4 text-center">Your Classes</h1>
+
+            {loading && <p className="text-blue-500 text-center mb-4">Loading your classes...</p>}
+
+            {message && (
+                <p
+                    className={`text-center font-medium mb-4 ${
+                        message.startsWith('Error') ? 'text-red-500' : 'text-green-500'
+                    }`}
+                >
+                    {message}
+                </p>
+            )}
+
             {classes.length > 0 && (
-                <div style={styles.classCardsContainer}>
+                <div
+                    className={`grid gap-6 ${
+                        classes.length === 1
+                            ? 'grid-cols-1'
+                            : classes.length === 2
+                                ? 'grid-cols-1 sm:grid-cols-2'
+                                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                    }`}
+                >
                     {classes.map((cls) => (
-                        <div key={cls.id} style={styles.classCard}>
-                            <h2>{cls.name}</h2>
-                            <p>Timings:</p>
-                            <ul>
-                                {/* Ensure that timings are properly displayed */}
+                        <div key={cls.id} className="p-4 bg-gray-100 border rounded-lg shadow">
+                            <h2 className="text-lg font-semibold">{cls.name}</h2>
+                            <p className="text-sm text-gray-600 mt-2">Timings:</p>
+                            <ul className="text-sm text-gray-800 mt-1 list-disc list-inside">
                                 {Array.isArray(cls.timings) && cls.timings.length > 0 ? (
                                     cls.timings.map((timing, index) => (
                                         <li key={index}>
@@ -55,7 +77,7 @@ const UserClassesPage = () => {
                                         </li>
                                     ))
                                 ) : (
-                                    <li>No timings available</li>
+                                    <li>No timings available.</li>
                                 )}
                             </ul>
                         </div>
@@ -64,48 +86,6 @@ const UserClassesPage = () => {
             )}
         </div>
     );
-};
-
-// Inline styles
-const styles = {
-    container: {
-        padding: '20px',
-        fontFamily: 'Arial, sans-serif',
-    },
-    form: {
-        marginBottom: '20px',
-    },
-    input: {
-        padding: '10px',
-        marginRight: '10px',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-    },
-    button: {
-        padding: '10px 15px',
-        backgroundColor: '#007BFF',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-    },
-    classCardsContainer: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '16px',
-        marginTop: '20px',
-    },
-    classCard: {
-        backgroundColor: '#f9f9f9',
-        border: '1px solid #ddd',
-        borderRadius: '8px',
-        padding: '16px',
-        boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
-        flex: '1 1 calc(33% - 16px)',
-    },
-    message: {
-        color: 'red',
-    }
 };
 
 export default UserClassesPage;
