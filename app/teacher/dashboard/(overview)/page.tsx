@@ -27,7 +27,7 @@ export default function TeacherDashboard() {
                     </ul>
                     <button
                         className="mt-4 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-400 transition"
-                        onClick={() => router.push('/classes/manage')}
+                        onClick={() => router.push('./dashboard/schoolClasses/viewClasses')}
                     >
                         View Classes & Attendance
                     </button>
@@ -50,7 +50,7 @@ export default function TeacherDashboard() {
                     </div>
                     <button
                         className="mt-4 w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-400 transition"
-                        onClick={() => router.push('/profile/edit')}
+                        onClick={() => router.push('./dashboard/profile')}
                     >
                         Edit Profile
                     </button>
@@ -67,13 +67,13 @@ export default function TeacherDashboard() {
                     <div className="flex flex-col gap-4 mt-auto">
                         <button
                             className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-400 transition"
-                            onClick={() => router.push('/classes/add')}
+                            onClick={() => router.push('./dashboard/schoolClasses/addClass')}
                         >
                             Add New Class
                         </button>
                         <button
                             className="w-full bg-red-500 text-white py-2 rounded hover:bg-red-400 transition"
-                            onClick={() => router.push('/classes/delete')}
+                            onClick={() => router.push('./dashboard/schoolClasses/deleteClass')}
                         >
                             Delete Class
                         </button>
