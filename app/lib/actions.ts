@@ -28,15 +28,15 @@ interface Class {
 
 // Function to create an account
 export async function createAccount(
-    id: string, // Explicitly type the parameter
-    fullname: string,
-    email: string,
-    password: string,
-    classes: string[] = [],
-    locationlatitude: string = '0.0',
-    locationlongitude: string = '0.0',
-    present: boolean = false,
-    role: string = 'student'
+    id,
+    fullname,
+    email,
+    password,
+    classes = [],
+    locationlatitude = '0.0',
+    locationlongitude = '0.0',
+    present = false,
+    role = 'student'
 ) {
     const client = await db.connect(); // Get a database client connection
     const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
