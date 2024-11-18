@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { fetchClassesForUserByEmail, fetchStudentsByClassId } from 'app/lib/actions'; // Ensure correct imports
+import { fetchClassesForUserByEmail5, fetchStudentsByClassId } from 'app/lib/actions'; // Ensure correct imports
 import Modal from 'app/ui/teacherDashboard/Modal'; // Adjust the path if needed
 
 const UserClassesPage = () => {
@@ -27,7 +27,7 @@ const UserClassesPage = () => {
     const fetchClasses = async (userEmail: string) => {
         setLoading(true);
         try {
-            const result = await fetchClassesForUserByEmail(userEmail);
+            const result = await fetchClassesForUserByEmail5(userEmail);
             setClasses(result);
 
             if (result.length === 0) {
@@ -88,6 +88,7 @@ const UserClassesPage = () => {
                             onClick={() => handleClassClick(cls.id)}
                         >
                             <h2 style={styles.className}>{cls.name}</h2>
+                            <p style={styles.entryCode}><strong>Entry Code:</strong> {cls.entryCode}</p>
                             <p style={styles.timingsLabel}>Timings:</p>
                             <ul style={styles.timingsList}>
                                 {Array.isArray(cls.timings) && cls.timings.length > 0 ? (
@@ -150,14 +151,16 @@ const styles = {
         cursor: 'pointer',
         transition: 'transform 0.2s ease, box-shadow 0.2s ease',
     },
-    classCardHover: {
-        transform: 'scale(1.05)',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-    },
     className: {
         fontSize: '18px',
         fontWeight: 'bold',
         marginBottom: '10px',
+    },
+    entryCode: {
+        fontSize: '14px',
+        fontWeight: 'bold',
+        marginBottom: '5px',
+        color: '#007BFF',
     },
     timingsLabel: {
         fontSize: '14px',

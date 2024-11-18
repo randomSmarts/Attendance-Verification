@@ -229,6 +229,48 @@ export const fetchClassesForUserByEmail = async (email: string): Promise<Class[]
     }
 };
 
+// Fetch classes for user by email
+export const fetchClassesForUserByEmail5 = async (email: string): Promise<Class[]> => {
+    const client = await db.connect();
+
+    try {
+        // Fetch the user's classes
+        const userResult = await client.query(
+            `SELECT classes FROM users WHERE email = $1`, [email]
+        );
+        const user = userResult.rows[0];
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        const userClasses = Array.isArray(user.classes) ? user.classes : [];
+
+        if (userClasses.length === 0) {
+            console.log('No classes found for this user.');
+            return [];
+        }
+
+        // Fetch details for each class, including the entryCode
+        const classesResult = await client.query(
+            `SELECT id, name, entrycode, timings FROM classes WHERE id = ANY($1::uuid[])`, [userClasses]
+        );
+
+        // Parse timings if stored as JSONB or JSON string
+        return classesResult.rows.map((cls: any) => ({
+            id: cls.id,
+            name: cls.name,
+            entryCode: cls.entrycode, // Include the entry code
+            timings: Array.isArray(cls.timings) ? cls.timings : JSON.parse(cls.timings), // Ensure timings are parsed
+        })) as Class[];
+    } catch (error) {
+        console.error('Error fetching user classes:', error);
+        throw new Error('Failed to fetch classes');
+    } finally {
+        client.release();
+    }
+};
+
 
 
 // Check if user is a teacher by email
