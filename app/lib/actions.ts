@@ -69,7 +69,6 @@ export async function createAccount(id, fullname, email, password, classes = [],
 // Function to login
 export async function login(email: string, password: string) {
     try {
-        // Fetch the user from the database using email
         const userResult = await db.query(`
             SELECT * FROM users WHERE email = $1;
         `, [email]);
@@ -80,18 +79,16 @@ export async function login(email: string, password: string) {
             return { success: false, message: 'User not found.' };
         }
 
-        // Compare the provided password with the hashed password in the database
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (!isPasswordValid) {
             return { success: false, message: 'Invalid password.' };
         }
 
-        // Check if the role is either 'student' or 'teacher'
         if (user.role === 'student') {
-            return { success: true, role: 'student' }; // Redirect to student dashboard
+            return { success: true, role: 'student' };
         } else if (user.role === 'teacher') {
-            return { success: true, role: 'teacher' }; // Redirect to teacher dashboard
+            return { success: true, role: 'teacher' };
         } else {
             return { success: false, message: 'Unknown role. Please contact support.' };
         }

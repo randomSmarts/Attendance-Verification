@@ -1,4 +1,3 @@
-// app/page.tsx
 'use client';
 
 import AcmeLogo from '@/app/ui/acme-logo';
@@ -11,7 +10,6 @@ export default function Page() {
     const [showPopup, setShowPopup] = useState<'create' | 'login' | null>(null);
     const [accountType, setAccountType] = useState('student');
     const [message, setMessage] = useState('');
-
     const [loginAccountType, setLoginAccountType] = useState('student');
 
     const handleOpenPopup = (action: 'create' | 'login') => {
@@ -31,25 +29,21 @@ export default function Page() {
     const handleCreateAccount = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        // Retrieving all required fields
         const fullname = (e.currentTarget.elements.namedItem('fullname') as HTMLInputElement).value;
         const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value;
         const password = (e.currentTarget.elements.namedItem('password') as HTMLInputElement).value;
-
-        // Pass an empty array for classes, so it defaults to the UUID
         const classes = [];
 
-        // Call the createAccount function
         const result = await createAccount(
-            crypto.randomUUID(), // Auto-generate a UUID for the user
+            crypto.randomUUID(),
             fullname,
             email,
             password,
-            classes, // Empty classes array, it will default to the UUID in the backend
-            '0.0', // Default location latitude
-            '0.0', // Default location longitude
-            false, // Default present status
-            accountType // Role of the user (student/teacher)
+            classes,
+            '0.0',
+            '0.0',
+            false,
+            accountType
         );
 
         if (result.success) {
@@ -60,33 +54,27 @@ export default function Page() {
         }
     };
 
-
-
-
     const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        // Retrieve the email and password from the form
         const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value;
         const password = (e.currentTarget.elements.namedItem('password') as HTMLInputElement).value;
 
-        // Call the login function to authenticate the user
         const result = await login(email, password);
 
-        // Redirect to the correct dashboard based on the user's role
         if (result.success) {
-            //@ts-ignore
+            // Store the user's email in localStorage
+            localStorage.setItem('userEmail', email);
+
             if (result.role === 'student') {
-                router.push('/student/dashboard'); // Redirect to student dashboard
+                router.push('/student/dashboard');
             } else if (result.role === 'teacher') {
-                router.push('/teacher/dashboard'); // Redirect to teacher dashboard
+                router.push('/teacher/dashboard');
             }
         } else {
-            // Show an error message if login fails
             setMessage(result.message || 'Login failed. Please check your credentials and try again.');
         }
     };
-
 
     return (
         <main className="flex min-h-screen flex-col p-6">
