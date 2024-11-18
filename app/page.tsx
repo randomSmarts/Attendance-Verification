@@ -60,20 +60,25 @@ export default function Page() {
         const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value;
         const password = (e.currentTarget.elements.namedItem('password') as HTMLInputElement).value;
 
-        // Pass the selected role to the login function
-        const result = await login(email, password, loginAccountType);
+        try {
+            const result = await login(email, password, loginAccountType);
 
-        if (result.success) {
-            // Store the user's email in localStorage
-            localStorage.setItem('userEmail', email);
+            if (result.success) {
+                // Store email in localStorage
+                localStorage.setItem('email', email);
 
-            if (result.role === 'student') {
-                router.push('/student/dashboard');
-            } else if (result.role === 'teacher') {
-                router.push('/teacher/dashboard');
+                // Redirect to dashboard based on role
+                if (result.role === 'student') {
+                    router.push('/student/dashboard');
+                } else if (result.role === 'teacher') {
+                    router.push('/teacher/dashboard');
+                }
+            } else {
+                setMessage(result.message || 'Login failed. Please check your credentials and try again.');
             }
-        } else {
-            setMessage(result.message || 'Login failed. Please check your credentials and try again.');
+        } catch (error) {
+            console.error('Login error:', error);
+            setMessage('An error occurred during login.');
         }
     };
 
