@@ -26,34 +26,49 @@ interface Class {
 
 // Function to create an account
 
-export async function createAccount(id, fullname, email, password, classes = [], locationlatitude = '0.0', locationlongitude = '0.0', present = false, role = 'student') {
+// Function to create an account
+export async function createAccount(
+    id,
+    fullname,
+    email,
+    password,
+    classes = [],
+    locationlatitude = '0.0',
+    locationlongitude = '0.0',
+    present = false,
+    role = 'student'
+) {
     const client = await db.connect(); // Get a database client connection
     const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
-
-    // Define the default UUID for classes
-    const defaultClassUUID = '2e572a46-b8a4-43ee-94ae-c689a2b2e334';
 
     try {
         await client.query('BEGIN'); // Start a transaction
 
+        // Check if email already exists
+        const existingUser = await client.query(`SELECT * FROM users WHERE email = $1`, [email]);
+
+        if (existingUser.rows.length > 0) {
+            return { success: false, message: 'An account with this email already exists.' };
+        }
+
         // Insert the new user into the database
-        await client.query(`
+        await client.query(
+            `
             INSERT INTO users (id, fullname, email, password, classes, locationlatitude, locationlongitude, present, role)
-            VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, $9
-            )
-            ON CONFLICT (email) DO NOTHING;  -- Prevent duplicate email entries
-        `, [
-            id || uuidv4(),  // Use provided ID or auto-generate if null
-            fullname,
-            email,
-            hashedPassword,
-            JSON.stringify(classes.length > 0 ? classes : [defaultClassUUID]), // Default to the given UUID if no classes are provided
-            locationlatitude, // Set default to '0.0'
-            locationlongitude, // Set default to '0.0'
-            present,
-            role
-        ]);
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            `,
+            [
+                id || uuidv4(), // Use provided ID or auto-generate if null
+                fullname,
+                email,
+                hashedPassword,
+                JSON.stringify(classes), // Store classes as JSON
+                locationlatitude, // Default to '0.0'
+                locationlongitude, // Default to '0.0'
+                present,
+                role,
+            ]
+        );
 
         await client.query('COMMIT'); // Commit the transaction
         return { success: true, message: 'Account created successfully' }; // Success response

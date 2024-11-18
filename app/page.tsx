@@ -3,7 +3,7 @@
 import AcmeLogo from '@/app/ui/acme-logo';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createAccount, login } from 'app/lib/actions'; // Import your actions
+import { createAccount, login } from 'app/lib/actions';
 
 export default function Page() {
     const router = useRouter();
@@ -32,25 +32,29 @@ export default function Page() {
         const fullname = (e.currentTarget.elements.namedItem('fullname') as HTMLInputElement).value;
         const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value;
         const password = (e.currentTarget.elements.namedItem('password') as HTMLInputElement).value;
-        const classes = [];
 
-        const result = await createAccount(
-            crypto.randomUUID(),
-            fullname,
-            email,
-            password,
-            classes,
-            '0.0',
-            '0.0',
-            false,
-            accountType
-        );
+        try {
+            const result = await createAccount(
+                crypto.randomUUID(),
+                fullname,
+                email,
+                password,
+                [],
+                '0.0',
+                '0.0',
+                false,
+                accountType
+            );
 
-        if (result.success) {
-            setMessage('Your account has been created, now please log in.');
-            handleClosePopup();
-        } else {
-            setMessage(result.message || 'Account creation failed.');
+            if (result.success) {
+                setMessage('Your account has been created, now please log in.');
+                handleClosePopup();
+            } else {
+                setMessage(result.message || 'Account creation failed.');
+            }
+        } catch (error) {
+            console.error('Error creating account:', error);
+            setMessage('An error occurred during account creation.');
         }
     };
 
@@ -64,17 +68,14 @@ export default function Page() {
             const result = await login(email, password, loginAccountType);
 
             if (result.success) {
-                // Store email in localStorage
-                localStorage.setItem('email', email);
-
-                // Redirect to dashboard based on role
+                localStorage.setItem('email', email); // Store email for session tracking
                 if (result.role === 'student') {
                     router.push('/student/dashboard');
                 } else if (result.role === 'teacher') {
                     router.push('/teacher/dashboard');
                 }
             } else {
-                setMessage(result.message || 'Login failed. Please check your credentials and try again.');
+                setMessage(result.message || 'Login failed. Please check your credentials.');
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -113,8 +114,12 @@ export default function Page() {
             {message && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                     <div className="bg-white rounded-lg p-6 w-80">
-                        <p className="text-green-600">{message}</p>
-                        <button onClick={() => setMessage('')} className="mt-4 text-blue-500">Close</button>
+                        <p className={message.startsWith('An account with this email') ? 'text-red-600' : 'text-green-600'}>
+                            {message}
+                        </p>
+                        <button onClick={() => setMessage('')} className="mt-4 text-blue-500">
+                            Close
+                        </button>
                     </div>
                 </div>
             )}
@@ -149,10 +154,20 @@ export default function Page() {
                     <div className="bg-white rounded-lg p-6 w-80">
                         <h2 className="text-xl mb-4">Log In</h2>
                         <form onSubmit={handleLogin}>
-                            <input type="email" name="email" placeholder="Email" className="border p-2 w-full mb-2"
-                                   required/>
-                            <input type="password" name="password" placeholder="Password"
-                                   className="border p-2 w-full mb-4" required/>
+                            <input
+                                type="email"
+                                name="email"
+                                placeholder="Email"
+                                className="border p-2 w-full mb-2"
+                                required
+                            />
+                            <input
+                                type="password"
+                                name="password"
+                                placeholder="Password"
+                                className="border p-2 w-full mb-4"
+                                required
+                            />
                             <label htmlFor="loginAccountType" className="block mb-2">I am a:</label>
                             <select
                                 id="loginAccountType"
