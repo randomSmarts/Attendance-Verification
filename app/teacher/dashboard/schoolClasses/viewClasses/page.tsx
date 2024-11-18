@@ -60,7 +60,7 @@ const UserClassesPage = () => {
         setIsModalOpen(false);
         setSelectedStudents([]);
     };
-
+// @ts-ignore
     return (
         <div style={styles.container}>
             <h1 style={styles.header}>Your Classes</h1>

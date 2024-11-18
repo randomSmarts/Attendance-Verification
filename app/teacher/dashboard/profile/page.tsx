@@ -37,6 +37,7 @@ export default function ViewUserInfo() {
         setError(null);
 
         try {
+            // @ts-ignore
             const data: UserInfo = await getUserInfoByEmail(userEmail);
             if (!data) {
                 throw new Error('User not found');

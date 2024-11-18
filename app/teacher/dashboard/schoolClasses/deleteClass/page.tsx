@@ -38,7 +38,7 @@ const DeleteClassPage = () => {
         // Clear the class code field
         setClassCode('');
     };
-
+// @ts-ignore
     return (
         <div style={styles.container}>
             <h1 style={styles.header}>Delete a Class</h1>

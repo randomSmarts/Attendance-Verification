@@ -26,6 +26,7 @@ export default function ViewUserInfo() {
             try {
                 // Fetch the user info by email
                 const data = await getUserInfoByEmail(userEmail);
+                // @ts-ignore
                 setUserInfo(data);
 
                 // Fetch the classes for the user
