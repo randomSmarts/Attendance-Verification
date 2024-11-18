@@ -282,23 +282,37 @@ export const fetchStudentsByClassId = async (classId: string): Promise<User[]> =
     }
 };
 
-// Add a class
-export const addClass = async (teacherId: string, name: string, entryCode: string, timings: any, students: string[]): Promise<{ success: boolean, classId: string }> => {
+// Add a class and include the teacher in the student list
+export const addClass = async (
+    teacherId: string,
+    name: string,
+    entryCode: string,
+    timings: any,
+    students: string[] = []
+): Promise<{ success: boolean; classId: string }> => {
     const client = await db.connect();
     const classId = uuidv4();
 
     try {
-        // Insert the new class with properly formatted timings and students
+        // Insert the class into the database, associating the teacher as `teacherId`
         await client.query(
             `INSERT INTO classes (id, name, entrycode, teacherid, timings, students)
-             VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb)`, // Store timings and students as JSONB
+             VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb)`,
             [classId, name, entryCode, teacherId, JSON.stringify(timings), JSON.stringify(students)]
+        );
+
+        // Update the teacher's `classes` field in the `users` table
+        await client.query(
+            `UPDATE users
+             SET classes = classes || $1::jsonb
+             WHERE id = $2`,
+            [JSON.stringify([classId]), teacherId]
         );
 
         return { success: true, classId };
     } catch (error) {
         console.error('Error adding class:', error);
-        throw new Error('Failed to add class');
+        throw new Error('Failed to add class. Please try again later.');
     } finally {
         client.release();
     }
