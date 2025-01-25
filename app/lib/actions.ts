@@ -27,6 +27,7 @@ interface Class {
 // Function to create an account
 
 // Function to create an account
+// @ts-ignore
 export async function createAccount(
     id,
     fullname,

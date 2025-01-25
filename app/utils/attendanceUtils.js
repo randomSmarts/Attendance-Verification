@@ -11,7 +11,7 @@ export const checkGeolocation = () => {
             const { latitude, longitude } = position.coords;
             console.log('User location:', { latitude, longitude });
 
-            const targetLocation = { latitude: 37.7662739142613, longitude: -121.91465778737411 }; // Replace with real values
+            const targetLocation = { latitude: 37.766399, longitude: -121.914650 }; // Replace with real values
 
             const distance = calculateDistance(latitude, longitude, targetLocation.latitude, targetLocation.longitude);
             console.log('Distance from target location (in feet):', distance);

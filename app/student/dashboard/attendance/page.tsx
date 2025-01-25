@@ -57,10 +57,10 @@ export default function AttendancePage() {
 
             await markAttendance(email, selectedClass, false, currentCoords);
 
-            if (!withinLocation) {
-                setMessage('You are not within the allowed location.');
-                return;
-            }
+            // if (!withinLocation) {
+            //     setMessage('You are not within the allowed location.');
+            //     return;
+            // }
 
             const timeResult = await markAttendance(email, selectedClass, true, currentCoords);
             if (timeResult.success) {
